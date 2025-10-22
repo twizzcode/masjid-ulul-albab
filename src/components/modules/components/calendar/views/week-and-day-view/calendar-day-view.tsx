@@ -1,6 +1,5 @@
 import { addDays, format, isWithinInterval, parseISO } from "date-fns";
 import { Calendar, Clock, User } from "lucide-react";
-import { useRef } from "react";
 import { DayPicker } from "@/components/ui/day-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/components/modules/components/calendar/contexts/calendar-context";
@@ -19,7 +18,6 @@ interface IProps {
 export function CalendarDayView({ events, daysCount = 1 }: IProps) {
 	const { selectedDate, setSelectedDate, users, use24HourFormat } =
 		useCalendar();
-	const scrollAreaRef = useRef<HTMLDivElement>(null);
 
 	const hours = Array.from({ length: 24 }, (_, i) => i);
 	
@@ -106,7 +104,7 @@ export function CalendarDayView({ events, daysCount = 1 }: IProps) {
 										{dayIdx > 0 && <div className="absolute left-0 top-0 w-px bg-border z-10" style={{ height: '720px' }} />}
 										
 										<div className="relative">
-											{hours.map((hour, index) => (
+											{hours.map((hour) => (
 												<div
 													key={hour}
 													className="relative border-b"

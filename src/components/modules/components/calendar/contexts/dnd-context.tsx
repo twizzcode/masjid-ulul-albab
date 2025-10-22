@@ -216,7 +216,7 @@ export function DndProvider({
 
 	return (
 		<DragDropContext.Provider value={contextValue}>
-			{showConfirmation && pendingDropData && <DndConfirmationDialog />}
+			{/* {showConfirmation && pendingDropData && <DndConfirmationDialog />} */}
 			{children}
 		</DragDropContext.Provider>
 	);

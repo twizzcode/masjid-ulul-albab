@@ -10,7 +10,7 @@ import { CalendarCheck2 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const navbarComponents = () => {
+function NavbarComponents() {
     const pathname = usePathname();
     return (
         <nav className='fixed bottom-0 w-full h-18 rounded-t-2xl border-t border-border bg-background shadow-lg z-100'>
@@ -40,4 +40,4 @@ const navbarComponents = () => {
     )
 }
 
-export default navbarComponents
+export default NavbarComponents
