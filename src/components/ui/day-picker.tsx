@@ -18,16 +18,15 @@ function DayPicker({
 	return (
 		<ReactDayPicker
 			showOutsideDays={showOutsideDays}
-			navLayout="after"
 			className={cn("p-3", className)}
 			classNames={{
 				months:
 					"flex flex-col select-none sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
 				month: "space-y-4",
 
-				month_caption: "flex justify-between items-center h-10 px-2",
-				caption_label: "text-sm font-medium flex-1 text-center",
-				nav: "flex items-center gap-1 flex-shrink-0",
+				month_caption: "flex justify-center items-center h-10 relative",
+				caption_label: "text-sm font-medium",
+				nav: "flex items-center gap-1 absolute left-0 right-0 flex justify-between px-2",
 				button_previous: cn(
 					buttonVariants({ variant: "outline" }),
 					"h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",

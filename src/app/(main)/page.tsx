@@ -2,7 +2,7 @@ import { Hero1 } from "@/components/ui/hero";
 
 export default function Home() {
   return (
-    <section className="flex flex-1 flex-col justify-center items-center">
+    <section className="flex flex-1 flex-col justify-center items-center p-4">
       <Hero1
         badge="Management System Masjid Ulul Albab ✨"
         heading="Sistem Peminjaman Tempat Masjid Ulul Albab"

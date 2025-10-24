@@ -2,6 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -10,13 +11,13 @@ import {
 	transition,
 } from "@/components/modules/components/calendar/animations";
 import { useCalendar } from "@/components/modules/components/calendar/contexts/calendar-context";
-import { AddEditEventDialog } from "@/components/modules/components/calendar/dialogs/add-edit-event-dialog";
 import { DateNavigator } from "@/components/modules/components/calendar/header/date-navigator";
 import { TodayButton } from "@/components/modules/components/calendar/header/today-button";
 import Views from "./view-tabs";
 
 export function CalendarHeader() {
 	const { view, events } = useCalendar();
+	const router = useRouter();
 
 	return (
 		<div className="flex flex-col gap-4 border-b p-4 lg:flex-row lg:items-center lg:justify-between">
@@ -42,12 +43,10 @@ export function CalendarHeader() {
 					<Views />
 				</div>
 
-				<AddEditEventDialog>
-					<Button>
-						<Plus className="h-4 w-4" />
-						Ajukan Peminjaman
-					</Button>
-				</AddEditEventDialog>
+				<Button onClick={() => router.push("/pinjam")}>
+					<Plus className="h-4 w-4" />
+					Ajukan Peminjaman
+				</Button>
 			</motion.div>
 		</div>
 	);

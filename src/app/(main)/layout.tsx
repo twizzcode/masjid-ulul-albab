@@ -17,7 +17,7 @@ export default function RootLayout({
     <div className="min-h-dvh">
       <NavBar />
       <Header />
-      <main className="fixed top-15 bottom-18 left-0 right-0 flex p-4 overflow-auto">
+      <main className="fixed top-15 bottom-18 left-0 right-0 flex overflow-auto">
         {children}
       </main>
     </div>

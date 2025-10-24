@@ -4,6 +4,7 @@ import { cva } from "class-variance-authority";
 import { isToday, startOfDay, isSunday, isSameMonth } from "date-fns";
 import { motion } from "framer-motion";
 import { useMemo, useCallback } from "react";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
 import {
@@ -18,7 +19,6 @@ import type {
 } from "@/components/modules/components/calendar/interfaces";
 import { EventBullet } from "@/components/modules/components/calendar/views/month-view/event-bullet";
 import { MonthEventBadge } from "@/components/modules/components/calendar/views/month-view/month-event-badge";
-import { AddEditEventDialog } from "../../dialogs/add-edit-event-dialog";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 
@@ -54,6 +54,7 @@ const MAX_VISIBLE_EVENTS = 3;
 export function DayCell({ cell, events, eventPositions }: IProps) {
   const { day, currentMonth, date } = cell;
   const isMobile = useMediaQuery("(max-width: 768px)");
+  const router = useRouter();
 
   // Memoize cellEvents and currentCellMonth for performance
   const { cellEvents, currentCellMonth } = useMemo(() => {
@@ -142,15 +143,14 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
         >
           {(cellEvents.length === 0 && !isMobile) ? (
             <div className="w-full h-full flex justify-center items-center group">
-              <AddEditEventDialog startDate={date}>
-                <Button
-                  variant="ghost"
-                  className="border opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                >
-                  <Plus className="h-4 w-4" />
-                  <span className="max-sm:hidden">Add Event</span>
-                </Button>
-              </AddEditEventDialog>
+              <Button
+                variant="ghost"
+                className="border opacity-0 group-hover:opacity-100 transition-opacity duration-200"
+                onClick={() => router.push("/pinjam")}
+              >
+                <Plus className="h-4 w-4" />
+                <span className="max-sm:hidden">Ajukan Peminjaman</span>
+              </Button>
             </div>
           ) : (
             [0, 1, 2].map(renderEventAtPosition)

@@ -110,21 +110,7 @@ export function CalendarDayView({ events, daysCount = 1 }: IProps) {
 													className="relative border-b"
 													style={{ height: "30px" }}
 												>
-													<AddEditEventDialog
-														startDate={day}
-														startTime={{ hour, minute: 0 }}
-													>
-														<div className="absolute inset-x-0 top-0 h-[15px] cursor-pointer transition-colors hover:bg-secondary" />
-													</AddEditEventDialog>
-
 													<div className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-b-tertiary"></div>
-
-													<AddEditEventDialog
-														startDate={day}
-														startTime={{ hour, minute: 30 }}
-													>
-														<div className="absolute inset-x-0 bottom-0 h-[15px] cursor-pointer transition-colors hover:bg-secondary" />
-													</AddEditEventDialog>
 												</div>
 											))}
 											<RenderGroupedEvents

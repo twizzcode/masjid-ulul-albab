@@ -50,7 +50,7 @@ export function CalendarMonthView({ events }: IProps) {
 				))}
 			</div>
 
-			<div className="grid grid-cols-7 overflow-hidden">
+			<div className="grid grid-cols-7 overflow-hidden min-h-[450px] h-full">
 				{cells.map((cell, index) => (
 					<DayCell
 						key={index}
