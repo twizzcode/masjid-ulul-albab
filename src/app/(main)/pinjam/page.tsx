@@ -1,13 +1,14 @@
 "use client";
 
 import { BookingOnboarding } from "@/components/onboarding";
+import { BookingData } from "@/components/onboarding/booking/types";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 
 export default function PinjamPage() {
   const router = useRouter();
 
-  const handleComplete = (data: any) => {
+  const handleComplete = (data: BookingData) => {
     console.log("Booking data:", data);
     // TODO: Send data to API
     // After successful submission, redirect to jadwal page

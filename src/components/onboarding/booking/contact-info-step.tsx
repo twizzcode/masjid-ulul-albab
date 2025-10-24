@@ -6,7 +6,7 @@ import { BookingData } from "./types";
 
 interface ContactInfoStepProps {
   formData: Partial<BookingData>;
-  onUpdate: (field: keyof BookingData, value: any) => void;
+  onUpdate: (field: keyof BookingData, value: string | Date | File | undefined) => void;
 }
 
 export function ContactInfoStep({ formData, onUpdate }: ContactInfoStepProps) {

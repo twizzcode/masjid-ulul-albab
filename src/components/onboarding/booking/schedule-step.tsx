@@ -17,7 +17,7 @@ interface ScheduleStepProps {
   scheduleValidation: ScheduleValidation;
   startDateOpen: boolean;
   endDateOpen: boolean;
-  onUpdate: (field: keyof BookingData, value: any) => void;
+  onUpdate: (field: keyof BookingData, value: string | Date | File | undefined) => void;
   onStartDateOpenChange: (open: boolean) => void;
   onEndDateOpenChange: (open: boolean) => void;
 }

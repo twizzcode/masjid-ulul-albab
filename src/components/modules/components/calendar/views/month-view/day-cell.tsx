@@ -190,6 +190,7 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
       showMoreCount,
       renderEventAtPosition,
       isMobile,
+      router,
     ]
   );
 

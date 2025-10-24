@@ -8,7 +8,7 @@ import { FileUploadField } from "./file-upload-field";
 interface EventDetailsStepProps {
   formData: Partial<BookingData>;
   fileError: string;
-  onUpdate: (field: keyof BookingData, value: any) => void;
+  onUpdate: (field: keyof BookingData, value: string | Date | File | undefined) => void;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRemoveFile: () => void;
 }

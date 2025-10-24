@@ -20,7 +20,7 @@ export function useBookingForm(defaultValues?: Partial<BookingData>) {
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
 
-  const updateFormData = (field: keyof BookingData, value: any) => {
+  const updateFormData = (field: keyof BookingData, value: string | Date | File | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 

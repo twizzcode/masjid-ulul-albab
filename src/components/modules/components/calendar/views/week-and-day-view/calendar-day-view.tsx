@@ -4,7 +4,6 @@ import { DayPicker } from "@/components/ui/day-picker";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useCalendar } from "@/components/modules/components/calendar/contexts/calendar-context";
 
-import { AddEditEventDialog } from "@/components/modules/components/calendar/dialogs/add-edit-event-dialog";
 import { groupEvents } from "@/components/modules/components/calendar/helpers";
 import type { IEvent } from "@/components/modules/components/calendar/interfaces";
 import { CalendarTimeline } from "@/components/modules/components/calendar/views/week-and-day-view/calendar-time-line";
