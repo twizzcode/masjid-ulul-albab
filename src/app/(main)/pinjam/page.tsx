@@ -16,15 +16,17 @@ export default function PinjamPage() {
   };
 
   return (
-    <motion.div 
-      className="w-full h-full flex items-start justify-center p-4 overflow-auto"
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-    >
-      <div className="w-full">
-        <BookingOnboarding onComplete={handleComplete} />
-      </div>
-    </motion.div>
+    <div className="p-4">
+      <motion.div 
+        className="w-full h-full flex items-start justify-center p-4 overflow-auto border rounded-xl"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+      >
+        <div className="w-full">
+          <BookingOnboarding onComplete={handleComplete} />
+        </div>
+      </motion.div>
+    </div>
   );
 }

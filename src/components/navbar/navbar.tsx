@@ -19,7 +19,7 @@ const navItems: NavItem[] = [
   { href: "/", label: "Home", icon: House },
   { href: "/jadwal", label: "Jadwal", icon: CalendarRange },
   { href: "/pinjam", label: "Pinjam", icon: SquarePlus },
-  { href: "/peminjaman-saya", label: "Riwayat", icon: FileText },
+  { href: "/riwayat", label: "Riwayat", icon: FileText },
 ];
 
 interface NavLinkItemProps {
