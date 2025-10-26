@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { LogIn, AlertCircle } from "lucide-react";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 export default function PinjamPage() {
 	const router = useRouter();
@@ -90,9 +91,15 @@ export default function PinjamPage() {
 		}
 	};
 
-	// Show nothing while loading
+	// Show loading screen while checking authentication
 	if (isLoading) {
-		return null;
+		return (
+			<div className="p-4">
+				<div className="w-full h-full flex items-start justify-center p-4 overflow-auto border rounded-xl">
+					<LoadingScreen message="Memuat halaman peminjaman..." />
+				</div>
+			</div>
+		);
 	}
 
 	return (

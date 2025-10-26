@@ -1,5 +1,6 @@
-import { Upload, X, FileText } from "lucide-react";
+import { Upload, X, FileText, AlertCircle } from "lucide-react";
 import { Field, FieldLabel } from "@/components/ui/field";
+import { toast } from "sonner";
 
 interface FileUploadFieldProps {
 	fileName?: string;
@@ -21,6 +22,10 @@ export function FileUploadField({
 
 		// Validate file type
 		if (file.type !== "application/pdf") {
+			toast.error("Hanya file PDF yang diperbolehkan", {
+				description: "Silakan pilih file dengan format .pdf",
+				icon: <AlertCircle className="w-4 h-4" />,
+			});
 			e.target.value = "";
 			return;
 		}
@@ -28,6 +33,11 @@ export function FileUploadField({
 		// Validate file size (max 2MB)
 		const maxSize = 2 * 1024 * 1024; // 2MB
 		if (file.size > maxSize) {
+			const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+			toast.error("Ukuran file terlalu besar", {
+				description: `Ukuran file Anda: ${fileSizeMB} MB. Maksimal 2 MB.`,
+				icon: <AlertCircle className="w-4 h-4" />,
+			});
 			e.target.value = "";
 			return;
 		}
@@ -62,7 +72,7 @@ export function FileUploadField({
 						<div className="flex items-center gap-2 flex-1 min-w-0">
 							<FileText className="w-5 h-5 text-green-600 flex-shrink-0" />
 							<div className="flex-1 min-w-0">
-								<span className="text-sm text-green-700 dark:text-green-400 truncate block">
+								<span className="text-sm text-green-700 dark:text-green-400 break-words block">
 									{fileName}
 								</span>
 							</div>

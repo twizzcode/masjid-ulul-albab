@@ -33,6 +33,7 @@ import {
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 interface Booking {
 	id: string;
@@ -274,7 +275,7 @@ export default function AdminBookingsPage() {
       return (
         <div className="flex items-center justify-center py-20">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-          <p className="ml-3 text-slate-600">Memuat data...</p>
+          <p className="ml-3 text-slate-600">Memuat data peminjaman...</p>
         </div>
       );
     }
@@ -300,8 +301,19 @@ export default function AdminBookingsPage() {
     );
   };
 
-  // Don't render anything until we verify user is admin
-  if (userLoading || !user || user.role !== "ADMIN") {
+  // Show loading screen while verifying admin access
+  if (userLoading) {
+    return (
+      <div className="p-4 w-full h-auto">
+        <div className="border rounded-xl p-4 overflow-y-auto">
+          <LoadingScreen message="Memverifikasi akses admin..." />
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render if not admin
+  if (!user || user.role !== "ADMIN") {
     return null;
   }
 

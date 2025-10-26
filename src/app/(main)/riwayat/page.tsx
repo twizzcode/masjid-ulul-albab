@@ -35,6 +35,7 @@ import { toast } from "sonner";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 interface Booking {
 	id: string;
@@ -192,7 +193,7 @@ export default function RiwayatPage() {
 			return (
 				<div className="flex items-center justify-center py-20">
 					<Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-					<p className="ml-3 text-slate-600">Memuat data...</p>
+					<p className="ml-3 text-slate-600">Memuat riwayat peminjaman...</p>
 				</div>
 			);
 		}
@@ -218,7 +219,16 @@ export default function RiwayatPage() {
 		);
 	};
 
-	if (userLoading) return null;
+	// Show loading screen while checking authentication
+	if (userLoading) {
+		return (
+			<div className="p-4 w-full">
+				<div className="w-full h-full flex items-start justify-center p-4 overflow-auto border rounded-xl">
+					<LoadingScreen message="Memuat riwayat peminjaman..." />
+				</div>
+			</div>
+		);
+	}
 
 	return (
 		<>

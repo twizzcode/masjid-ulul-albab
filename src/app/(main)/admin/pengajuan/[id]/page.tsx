@@ -37,6 +37,7 @@ import { id } from "date-fns/locale";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/use-user";
 import { getProxyFileUrl } from "@/lib/file-helpers";
+import { LoadingScreen } from "@/components/ui/loading-screen";
 
 interface BookingDetail {
 	id: string;
@@ -214,9 +215,10 @@ export default function AdminPengajuanDetailPage() {
 
 	if (userLoading || !user || user.role !== "ADMIN" || isLoading) {
 		return (
-			<div className="flex items-center justify-center min-h-screen">
-				<Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-				<p className="ml-3 text-slate-600">Memuat detail...</p>
+			<div className="p-4">
+				<div className="border rounded-xl p-4 overflow-y-auto">
+					<LoadingScreen message="Memuat detail pengajuan..." />
+				</div>
 			</div>
 		);
 	}
