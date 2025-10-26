@@ -48,23 +48,23 @@ export function ScheduleValidationAlert({
             {validation.type === "error" ? "⚠️" : "✓"} {validation.message}
           </p>
           
-          {validation.type === "error" && (validation as any).conflictingBooking && (
+          {validation.type === "error" && validation.conflictingBooking && (
             <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800 space-y-1">
               <p className="text-xs text-red-600 dark:text-red-500 font-semibold">
                 Booking yang bentrok:
               </p>
               <p className="text-xs text-red-600 dark:text-red-500">
-                📌 {(validation as any).conflictingBooking.eventName}
+                📌 {validation.conflictingBooking.eventName}
               </p>
               <p className="text-xs text-red-600 dark:text-red-500">
-                🏢 {(validation as any).conflictingBooking.organizerName}
+                🏢 {validation.conflictingBooking.organizerName}
               </p>
               <p className="text-xs text-red-600 dark:text-red-500 flex items-center gap-1">
                 <Clock className="w-3 h-3" />
-                {format(new Date((validation as any).conflictingBooking.startDate), "dd MMM yyyy, HH:mm", { locale: id })} - {format(new Date((validation as any).conflictingBooking.endDate), "HH:mm", { locale: id })}
+                {format(new Date(validation.conflictingBooking.startDate), "dd MMM yyyy, HH:mm", { locale: id })} - {format(new Date(validation.conflictingBooking.endDate), "HH:mm", { locale: id })}
               </p>
               <p className="text-xs text-red-600 dark:text-red-500">
-                Status: {(validation as any).conflictingBooking.status === "approved" ? "Disetujui" : "Menunggu Persetujuan"}
+                Status: {validation.conflictingBooking.status === "approved" ? "Disetujui" : "Menunggu Persetujuan"}
               </p>
             </div>
           )}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookingData } from "./types";
+import { BookingData, ScheduleValidation } from "./types";
 import { validateFile, validateStep } from "./validation";
 
 export function useBookingForm(defaultValues?: Partial<BookingData>) {
@@ -19,7 +19,7 @@ export function useBookingForm(defaultValues?: Partial<BookingData>) {
   const [currentStep, setCurrentStep] = useState(0);
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
-  const [scheduleValidation, setScheduleValidation] = useState<any>(null);
+  const [scheduleValidation, setScheduleValidation] = useState<ScheduleValidation>(null);
   const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
 
   // Check schedule availability when location, startDate, or endDate changes

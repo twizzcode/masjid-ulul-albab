@@ -89,10 +89,10 @@ export async function POST(request: NextRequest) {
       isAvailable: true,
       message: "Jadwal tersedia",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Check availability error:", error);
 
-    if (error.message === "Unauthorized") {
+    if (error instanceof Error && error.message === "Unauthorized") {
       return NextResponse.json(
         { error: "Unauthorized" },
         { status: 401 }

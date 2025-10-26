@@ -29,7 +29,6 @@ import {
   Eye,
   Archive,
   ListChecks,
-  AlertCircle,
 } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
@@ -85,13 +84,13 @@ export default function AdminBookingsPage() {
     if (user && user.role === "ADMIN" && activeTab === "ongoing" && ongoingBookings.length === 0) {
       fetchBookings("ongoing");
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, ongoingBookings.length]);
 
   useEffect(() => {
     if (user && user.role === "ADMIN" && activeTab === "archived" && archivedBookings.length === 0) {
       fetchBookings("archived");
     }
-  }, [user, activeTab]);
+  }, [user, activeTab, archivedBookings.length]);
 
   const fetchBookings = async (type: "ongoing" | "archived") => {
     try {
@@ -359,7 +358,7 @@ export default function AdminBookingsPage() {
               <p className="text-sm text-muted-foreground">Setujui atau tolak pengajuan peminjaman</p>
             </div>
 
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "ongoing" | "archived")} className="w-full">
               <TabsList className="grid w-full max-w-md grid-cols-2">
                 <TabsTrigger value="ongoing" className="gap-2">
                   <ListChecks className="w-4 h-4" />Berlaku

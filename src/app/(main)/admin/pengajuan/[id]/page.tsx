@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
 	Dialog,
@@ -73,21 +72,7 @@ export default function AdminPengajuanDetailPage() {
 	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 	const [rejectionReason, setRejectionReason] = useState("");
 
-	useEffect(() => {
-		if (!userLoading && user) {
-			if (user.role !== "ADMIN") {
-				router.replace('/');
-			}
-		}
-	}, [user, userLoading, router]);
-
-	useEffect(() => {
-		if (user && user.role === "ADMIN" && params.id) {
-			fetchBookingDetail(params.id as string);
-		}
-	}, [user, params.id]);
-
-	const fetchBookingDetail = async (id: string) => {
+	const fetchBookingDetail = useCallback(async (id: string) => {
 		try {
 			setIsLoading(true);
 			const response = await fetch(`/api/admin/bookings/${id}`);
@@ -109,7 +94,21 @@ export default function AdminPengajuanDetailPage() {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [router]);
+
+	useEffect(() => {
+		if (!userLoading && user) {
+			if (user.role !== "ADMIN") {
+				router.replace('/');
+			}
+		}
+	}, [user, userLoading, router]);
+
+	useEffect(() => {
+		if (user && user.role === "ADMIN" && params.id) {
+			fetchBookingDetail(params.id as string);
+		}
+	}, [user, params.id, fetchBookingDetail]);
 
 	const handleApprove = async () => {
 		if (!booking) return;

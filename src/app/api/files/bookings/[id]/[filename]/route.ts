@@ -72,7 +72,8 @@ export async function GET(
 
 		// Convert stream to buffer
 		const chunks: Uint8Array[] = [];
-		for await (const chunk of response.Body as any) {
+		const bodyStream = response.Body as AsyncIterable<Uint8Array>;
+		for await (const chunk of bodyStream) {
 			chunks.push(chunk);
 		}
 		const buffer = Buffer.concat(chunks);

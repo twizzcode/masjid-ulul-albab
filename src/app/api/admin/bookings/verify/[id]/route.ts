@@ -5,10 +5,10 @@ import { checkIsAdmin } from "@/lib/auth-helpers";
 // GET /api/admin/bookings/verify/[id]?action=approve|reject&token=xxx
 export async function GET(
 	request: NextRequest,
-	{ params }: { params: { id: string } }
+	{ params }: { params: Promise<{ id: string }> }
 ) {
 	try {
-		const bookingId = params.id;
+		const { id: bookingId } = await params;
 		const searchParams = request.nextUrl.searchParams;
 		const action = searchParams.get("action");
 		const token = searchParams.get("token");
@@ -102,11 +102,11 @@ export async function GET(
 		}
 
 		// Decode token and verify (simple implementation)
-		// Token format: base64(adminId:timestamp:bookingId)
+		// Token format: base64(adminId:bookingId)
 		let adminId: string;
 		try {
 			const decoded = Buffer.from(token, "base64").toString("utf-8");
-			const [id, timestamp, bId] = decoded.split(":");
+			const [id, bId] = decoded.split(":");
 
 			if (bId !== bookingId) {
 				throw new Error("Invalid token");
@@ -119,12 +119,12 @@ export async function GET(
 			}
 
 			adminId = id;
-		} catch (error) {
+		} catch {
 			return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
 		}
 
 		// Update booking status
-		const updatedBooking = await prisma.booking.update({
+		await prisma.booking.update({
 			where: { id: bookingId },
 			data: {
 				status: action === "approve" ? "approved" : "rejected",

@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
 		const letterUrl = `${R2_PUBLIC_URL}/${fileName}`;
 
 		// Update booking with letterUrl
-		const updatedBooking = await prisma.booking.update({
+		await prisma.booking.update({
 			where: { id: booking.id},
 			data: { letterUrl },
 			include: {
@@ -227,7 +227,7 @@ export async function GET(req: NextRequest) {
 
     const now = new Date();
     
-    let whereCondition: any = {
+    const whereCondition: Record<string, unknown> = {
       userId: session.user.id,
     };
 

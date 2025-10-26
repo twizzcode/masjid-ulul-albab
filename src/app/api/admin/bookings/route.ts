@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     const now = new Date();
     
-    let whereCondition: any = status ? { status } : {};
+    const whereCondition: Record<string, unknown> = status ? { status } : {};
 
     // Filter berdasarkan type
     if (type === "ongoing") {
@@ -35,10 +35,10 @@ export async function GET(request: NextRequest) {
     });
 
     return NextResponse.json({ bookings });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Fetch admin bookings error:", error);
     
-    if (error.message === "Unauthorized" || error.message.includes("Forbidden")) {
+    if (error instanceof Error && (error.message === "Unauthorized" || error.message.includes("Forbidden"))) {
       return NextResponse.json(
         { error: error.message },
         { status: 403 }

@@ -69,13 +69,13 @@ export default function RiwayatPage() {
 		if (user && activeTab === "ongoing" && ongoingBookings.length === 0) {
 			fetchBookings("ongoing");
 		}
-	}, [user, activeTab]);
+	}, [user, activeTab, ongoingBookings.length]);
 
 	useEffect(() => {
 		if (user && activeTab === "past" && pastBookings.length === 0) {
 			fetchBookings("past");
 		}
-	}, [user, activeTab]);
+	}, [user, activeTab, pastBookings.length]);
 
 	const fetchBookings = async (type: "ongoing" | "past") => {
 		try {
@@ -255,7 +255,7 @@ export default function RiwayatPage() {
 								<p className="text-sm text-muted-foreground">Lihat riwayat peminjaman Anda</p>
 							</div>
 
-							<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="w-full">
+							<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "ongoing" | "past")} className="w-full">
 								<TabsList className="grid w-full max-w-md grid-cols-2">
 									<TabsTrigger value="ongoing" className="gap-2">
 										<Hourglass className="w-4 h-4" />Berlangsung

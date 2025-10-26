@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -26,7 +26,6 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { toast } from "sonner";
 import { useUser } from "@/hooks/use-user";
-import Link from "next/link";
 
 interface BookingDetail {
 	id: string;
@@ -56,19 +55,7 @@ export default function RiwayatDetailPage() {
 	const [isLoading, setIsLoading] = useState(true);
 	const [isSendingWhatsApp, setIsSendingWhatsApp] = useState(false);
 
-	useEffect(() => {
-		if (!userLoading && !user) {
-			router.push("/riwayat");
-		}
-	}, [user, userLoading, router]);
-
-	useEffect(() => {
-		if (user && params.id) {
-			fetchBookingDetail(params.id as string);
-		}
-	}, [user, params.id]);
-
-	const fetchBookingDetail = async (id: string) => {
+	const fetchBookingDetail = useCallback(async (id: string) => {
 		try {
 			setIsLoading(true);
 			const response = await fetch(`/api/bookings/${id}`);
@@ -90,7 +77,19 @@ export default function RiwayatDetailPage() {
 		} finally {
 			setIsLoading(false);
 		}
-	};
+	}, [router]);
+
+	useEffect(() => {
+		if (!userLoading && !user) {
+			router.push("/riwayat");
+		}
+	}, [user, userLoading, router]);
+
+	useEffect(() => {
+		if (user && params.id) {
+			fetchBookingDetail(params.id as string);
+		}
+	}, [user, params.id, fetchBookingDetail]);
 
 	const handleSendWhatsApp = async () => {
 		if (!booking) return;

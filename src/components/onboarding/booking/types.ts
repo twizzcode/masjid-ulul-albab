@@ -17,7 +17,16 @@ export interface BookingOnboardingProps {
 	isSubmitting?: boolean;
 }
 
+export interface ConflictingBooking {
+  eventName: string;
+  organizerName: string;
+  startDate: string;
+  endDate: string;
+  status: string;
+}
+
 export type ScheduleValidation = {
   type: "error" | "success";
   message: string;
+  conflictingBooking?: ConflictingBooking;
 } | null;

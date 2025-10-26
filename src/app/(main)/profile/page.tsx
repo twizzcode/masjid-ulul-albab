@@ -6,7 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { Separator } from "@/components/ui/separator";
 
-const profilepage = () => {
+const ProfilePage = () => {
   const { user } = useUser();
   const initials =
     user?.name
@@ -38,4 +38,4 @@ const profilepage = () => {
   );
 };
 
-export default profilepage;
+export default ProfilePage;

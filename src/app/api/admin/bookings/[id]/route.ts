@@ -33,10 +33,10 @@ export async function GET(
     }
 
     return NextResponse.json({ booking }, { status: 200 });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Get booking detail error:", error);
     
-    if (error.message === "Unauthorized" || error.message.includes("Forbidden")) {
+    if (error instanceof Error && (error.message === "Unauthorized" || error.message.includes("Forbidden"))) {
       return NextResponse.json(
         { error: error.message },
         { status: 403 }
@@ -95,10 +95,10 @@ export async function PATCH(
       success: true,
       booking,
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Update booking status error:", error);
     
-    if (error.message === "Unauthorized" || error.message.includes("Forbidden")) {
+    if (error instanceof Error && (error.message === "Unauthorized" || error.message.includes("Forbidden"))) {
       return NextResponse.json(
         { error: error.message },
         { status: 403 }
@@ -130,10 +130,10 @@ export async function DELETE(
       success: true,
       message: "Booking deleted successfully",
     });
-  } catch (error: any) {
+  } catch (error) {
     console.error("Delete booking error:", error);
     
-    if (error.message === "Unauthorized" || error.message.includes("Forbidden")) {
+    if (error instanceof Error && (error.message === "Unauthorized" || error.message.includes("Forbidden"))) {
       return NextResponse.json(
         { error: error.message },
         { status: 403 }
