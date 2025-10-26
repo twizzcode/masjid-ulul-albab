@@ -51,17 +51,12 @@ export function EventDetailsStep({
           />
         </Field>
 
-        <Field>
-          <FieldLabel>
-            Surat Peminjaman (PDF) <span className="text-red-500">*</span>
-          </FieldLabel>
-          <FileUploadField
-            formData={formData}
-            fileError={fileError}
-            onFileChange={onFileChange}
-            onRemoveFile={onRemoveFile}
-          />
-        </Field>
+		<FileUploadField
+			fileName={formData.letterFileName}
+			onFileChange={onFileChange}
+			onRemove={onRemoveFile}
+			error={fileError}
+		/>
       </div>
     </OnboardingStep>
   );

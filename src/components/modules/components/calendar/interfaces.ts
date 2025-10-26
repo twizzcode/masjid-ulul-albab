@@ -15,6 +15,11 @@ export interface IEvent {
 	description: string;
 	user: IUser;
 	status: "pending" | "approved" | "rejected";
+	// Booking details
+	contactName?: string;
+	contactPhone?: string;
+	organizerName?: string;
+	location?: string;
 }
 
 export interface ICalendarCell {

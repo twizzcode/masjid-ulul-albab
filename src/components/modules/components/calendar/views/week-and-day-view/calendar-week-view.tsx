@@ -1,10 +1,4 @@
 import {addDays, format, parseISO, startOfWeek} from "date-fns";
-import {motion} from "framer-motion";
-import {
-    fadeIn,
-    staggerContainer,
-    transition,
-} from "@/components/modules/components/calendar/animations";
 import {useCalendar} from "@/components/modules/components/calendar/contexts/calendar-context";
 import {groupEvents} from "@/components/modules/components/calendar/helpers";
 import type {IEvent} from "@/components/modules/components/calendar/interfaces";
@@ -23,97 +17,69 @@ export function CalendarWeekView({events}: IProps) {
     const hours = Array.from({length: 24}, (_, i) => i);
 
     return (
-        <motion.div
-            initial="initial"
-            animate="animate"
-            exit="exit"
-            variants={fadeIn}
-            transition={transition}
-        >
-            <motion.div
-                className="flex flex-col items-center justify-center border-b p-4 text-sm sm:hidden"
-                initial={{opacity: 0, y: -20}}
-                animate={{opacity: 1, y: 0}}
-                transition={transition}
-            >
+        <div>
+            <div className="flex flex-col items-center justify-center border-b p-4 text-sm sm:hidden">
                 <p>Weekly view is not recommended on smaller devices.</p>
                 <p>Please switch to a desktop device or use the daily view instead.</p>
-            </motion.div>
+            </div>
 
-            <motion.div
-                className="flex-col sm:flex h-full"
-                variants={staggerContainer}
-            >
+            <div className="flex-col sm:flex h-full">
                 {/* Week header - Fixed */}
-                <motion.div
-                    className="relative z-20 flex border-b bg-background"
-                    initial={{opacity: 0, y: -20}}
-                    animate={{opacity: 1, y: 0}}
-                    transition={transition}
-                >
+                <div className="relative z-20 flex border-b bg-background">
                     {/* Time column header - responsive width */}
                     <div className="w-18"></div>
                     <div className="grid flex-1 grid-cols-7  border-l">
                         {weekDays.map((day, index) => (
-                            <motion.span
+                            <span
                                 key={index}
                                 className="py-1 sm:py-2 text-center text-xs font-medium text-t-quaternary"
-                                initial={{opacity: 0, y: -10}}
-                                animate={{opacity: 1, y: 0}}
-                                transition={{delay: index * 0.05, ...transition}}
                             >
                                 {/* Mobile: Show only day abbreviation and number */}
                                 <span className="block sm:hidden">
-                                {format(day, "EEE").charAt(0)}
+                                    {format(day, "EEE").charAt(0)}
                                     <span className="block font-semibold text-t-secondary text-xs">
-                                    {format(day, "d")}
+                                        {format(day, "d")}
+                                    </span>
                                 </span>
-                            </span>
                                 {/* Desktop: Show full format */}
                                 <span className="hidden sm:inline">
-                                {format(day, "EE")}{" "}
+                                    {format(day, "EE")}{" "}
                                     <span className="ml-1 font-semibold text-t-secondary">
-                                    {format(day, "d")}
+                                        {format(day, "d")}
+                                    </span>
                                 </span>
                             </span>
-                            </motion.span>
                         ))}
                     </div>
-                </motion.div>
+                </div>
 
                 {/* Scrollable grid area */}
                 <div className="flex flex-1 overflow-auto">
                     <div className="flex w-full">
                         {/* Hours column */}
-                        <motion.div className="relative w-18 flex-shrink-0" variants={staggerContainer}>
+                        <div className="relative w-18 flex-shrink-0">
                             {hours.map((hour, index) => (
-                                <motion.div
+                                <div
                                     key={hour}
                                     className="relative"
                                     style={{height: "30px"}}
-                                    initial={{opacity: 0, x: -20}}
-                                    animate={{opacity: 1, x: 0}}
-                                    transition={{delay: index * 0.02, ...transition}}
                                 >
                                     <div className="absolute -top-2 right-2 flex h-4 items-center">
                                         {index !== 0 && (
                                             <span className="text-[10px] text-t-quaternary">
-                                            {format(
-                                                new Date().setHours(hour, 0, 0, 0),
-                                                use24HourFormat ? "HH:00" : "h a",
-                                            )}
-                                        </span>
+                                                {format(
+                                                    new Date().setHours(hour, 0, 0, 0),
+                                                    use24HourFormat ? "HH:00" : "h a",
+                                                )}
+                                            </span>
                                         )}
                                     </div>
-                                </motion.div>
+                                </div>
                             ))}
-                        </motion.div>
+                        </div>
 
                         {/* Week grid */}
-                        <motion.div
-                            className="relative flex-1 border-l"
-                            variants={staggerContainer}
-                        >
+                        <div className="relative flex-1 border-l">
                             <div className="grid grid-cols-7 relative">
                                 {weekDays.map((day, dayIndex) => {
                                     const dayStart = new Date(day);
@@ -130,24 +96,18 @@ export function CalendarWeekView({events}: IProps) {
                                     const groupedEvents = groupEvents(dayEvents);
 
                                     return (
-                                        <motion.div
+                                        <div
                                             key={dayIndex}
                                             className="relative"
-                                            initial={{opacity: 0}}
-                                            animate={{opacity: 1}}
-                                            transition={{delay: dayIndex * 0.1, ...transition}}
                                         >
                                             {/* Vertical line that extends full height - 24 hours × 30px = 720px */}
                                             {dayIndex > 0 && <div className="absolute left-0 top-0 w-px bg-border z-10" style={{ height: '720px' }} />}
                                         
                                             {hours.map((hour, index) => (
-                                                <motion.div
+                                                <div
                                                     key={hour}
                                                     className="relative"
                                                     style={{height: "30px"}}
-                                                    initial={{opacity: 0}}
-                                                    animate={{opacity: 1}}
-                                                    transition={{delay: index * 0.01, ...transition}}
                                                 >
                                                     {index !== 0 && (
                                                         <div
@@ -156,23 +116,23 @@ export function CalendarWeekView({events}: IProps) {
 
                                                     <div
                                                         className="pointer-events-none absolute inset-x-0 top-1/2 border-b border-dashed border-b-tertiary"></div>
-                                                </motion.div>
+                                                </div>
                                             ))}
 
                                             <RenderGroupedEvents
                                                 groupedEvents={groupedEvents}
                                                 day={day}
                                             />
-                                        </motion.div>
+                                        </div>
                                     );
                                 })}
                             </div>
 
                             <CalendarTimeline/>
-                        </motion.div>
+                        </div>
                     </div>
                 </div>
-            </motion.div>
-        </motion.div>
+            </div>
+        </div>
     );
 }

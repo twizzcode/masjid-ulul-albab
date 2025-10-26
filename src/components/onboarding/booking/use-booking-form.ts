@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BookingData } from "./types";
-import { validateFile, validateSchedule, validateStep } from "./validation";
+import { validateFile, validateStep } from "./validation";
 
 export function useBookingForm(defaultValues?: Partial<BookingData>) {
   const [formData, setFormData] = useState<Partial<BookingData>>({
@@ -19,6 +19,77 @@ export function useBookingForm(defaultValues?: Partial<BookingData>) {
   const [currentStep, setCurrentStep] = useState(0);
   const [startDateOpen, setStartDateOpen] = useState(false);
   const [endDateOpen, setEndDateOpen] = useState(false);
+  const [scheduleValidation, setScheduleValidation] = useState<any>(null);
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false);
+
+  // Check schedule availability when location, startDate, or endDate changes
+  useEffect(() => {
+    const checkAvailability = async () => {
+      if (!formData.startDate || !formData.endDate || !formData.location) {
+        setScheduleValidation(null);
+        return;
+      }
+
+      const start = new Date(formData.startDate);
+      const end = new Date(formData.endDate);
+
+      // Validate end time is after start time
+      if (end <= start) {
+        setScheduleValidation({
+          type: "error",
+          message: "Waktu selesai harus lebih lama dari waktu mulai",
+        });
+        return;
+      }
+
+      try {
+        setIsCheckingAvailability(true);
+        
+        const response = await fetch("/api/bookings/check-availability", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            location: formData.location,
+            startDate: formData.startDate.toISOString(),
+            endDate: formData.endDate.toISOString(),
+          }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          setScheduleValidation({
+            type: "error",
+            message: data.error || "Gagal memeriksa ketersediaan",
+          });
+          return;
+        }
+
+        if (data.isAvailable) {
+          setScheduleValidation({
+            type: "success",
+            message: "Jadwal tersedia",
+          });
+        } else {
+          setScheduleValidation({
+            type: "error",
+            message: data.message || "Waktu yang dipilih sudah dibooking",
+            conflictingBooking: data.conflictingBooking,
+          });
+        }
+      } catch (error) {
+        console.error("Check availability error:", error);
+        setScheduleValidation({
+          type: "error",
+          message: "Gagal memeriksa ketersediaan jadwal",
+        });
+      } finally {
+        setIsCheckingAvailability(false);
+      }
+    };
+
+    checkAvailability();
+  }, [formData.location, formData.startDate, formData.endDate]);
 
   const updateFormData = (field: keyof BookingData, value: string | Date | File | undefined) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -41,16 +112,13 @@ export function useBookingForm(defaultValues?: Partial<BookingData>) {
     updateFormData("letterFileName", file.name);
   };
 
-  const handleRemoveFile = () => {
-    updateFormData("letterFile", undefined);
-    updateFormData("letterFileName", "");
-    setFileError("");
-  };
-
-  const scheduleValidation = validateSchedule(
-    formData.startDate,
-    formData.endDate
-  );
+const handleRemoveFile = () => {
+	setFormData((prev) => ({
+		...prev,
+		letterFile: undefined,
+		letterFileName: "",
+	}));
+};
 
   const canProceedToNextStep = (step: number): boolean => {
     return validateStep(step, formData, scheduleValidation);
@@ -63,6 +131,7 @@ export function useBookingForm(defaultValues?: Partial<BookingData>) {
     startDateOpen,
     endDateOpen,
     scheduleValidation,
+    isCheckingAvailability,
     updateFormData,
     handleFileChange,
     handleRemoveFile,

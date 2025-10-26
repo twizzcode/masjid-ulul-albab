@@ -2,14 +2,10 @@
 
 import { cva } from "class-variance-authority";
 import { isToday, startOfDay, isSunday, isSameMonth } from "date-fns";
-import { motion } from "framer-motion";
 import { useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils";
-import {
-  transition,
-} from "@/components/modules/components/calendar/animations";
 import { EventListDialog } from "@/components/modules/components/calendar/dialogs/events-list-dialog";
 import { getMonthCellEvents } from "@/components/modules/components/calendar/helpers";
 import { useMediaQuery } from "@/components/modules/components/calendar/hooks";
@@ -65,17 +61,15 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
     return { cellEvents, currentCellMonth };
   }, [date, events, eventPositions]);
 
-  // Memoize event rendering for each position with animation
+  // Memoize event rendering for each position
   const renderEventAtPosition = useCallback(
     (position: number) => {
       const event = cellEvents.find((e) => e.position === position);
       if (!event) {
         return (
-          <motion.div
+          <div
             key={`empty-${position}`}
             className="lg:flex-1"
-            initial={false}
-            animate={false}
           />
         );
       }
@@ -85,12 +79,9 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
       );
 
       return (
-        <motion.div
+        <div
           key={`event-${event.id}-${position}`}
           className="lg:flex-1"
-          initial={{ opacity: 0, x: -10 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: position * 0.1, ...transition }}
         >
           <>
             {showBullet && (
@@ -102,7 +93,7 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
               cellDate={startOfDay(date)}
             />
           </>
-        </motion.div>
+        </div>
       );
     },
     [cellEvents, currentCellMonth, date]
@@ -115,16 +106,13 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
 
   const cellContent = useMemo(
     () => (
-      <motion.div
+      <div
         className={cn(
           "flex h-full lg:min-h-40 flex-col gap-1 border-l border-t py-2",
           isSunday(date) && "border-l-0"
         )}
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={transition}
       >
-        <motion.span
+        <span
           className={cn(
             "h-6 px-1 text-xs font-semibold lg:px-2",
             !currentMonth && "opacity-20",
@@ -133,9 +121,9 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
           )}
         >
           {day}
-        </motion.span>
+        </span>
 
-        <motion.div
+        <div
           className={cn(
             "flex h-fit gap-1 px-2 mt-1 lg:h-[94px] lg:flex-col lg:gap-2 lg:px-0",
             !currentMonth && "opacity-50"
@@ -155,7 +143,7 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
           ) : (
             [0, 1, 2].map(renderEventAtPosition)
           )}
-        </motion.div>
+        </div>
 
         {showMobileMore && (
           <div className="flex justify-end items-end mx-2">
@@ -166,19 +154,16 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
         )}
 
         {showDesktopMore && (
-          <motion.div
+          <div
             className={cn(
               "h-4.5 px-1.5 my-2 text-end text-xs font-semibold text-muted-foreground",
               !currentMonth && "opacity-50"
             )}
-            initial={{ opacity: 0, y: 5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3, ...transition }}
           >
             <EventListDialog date={date} events={cellEvents} />
-          </motion.div>
+          </div>
         )}
-      </motion.div>
+      </div>
     ),
     [
       date,

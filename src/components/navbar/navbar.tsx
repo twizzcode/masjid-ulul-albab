@@ -3,9 +3,10 @@
 import React, { memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, FileText, SquarePlus, CalendarRange, LucideIcon } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { House, FileText, SquarePlus, CalendarRange, LucideIcon, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useUser } from "@/hooks/use-user";
+import NavUser from "./navuser";
 
 interface NavItem {
   href: string;
@@ -19,7 +20,6 @@ const navItems: NavItem[] = [
   { href: "/", label: "Home", icon: House },
   { href: "/jadwal", label: "Jadwal", icon: CalendarRange },
   { href: "/pinjam", label: "Pinjam", icon: SquarePlus },
-  { href: "/riwayat", label: "Riwayat", icon: FileText },
 ];
 
 interface NavLinkItemProps {
@@ -61,47 +61,9 @@ const NavLinkItem = memo(({ item, isActive }: NavLinkItemProps) => {
 
 NavLinkItem.displayName = "NavLinkItem";
 
-interface ProfileNavItemProps {
-  isActive: boolean;
-}
-
-const ProfileNavItem = memo(({ isActive }: ProfileNavItemProps) => {
-  return (
-    <Link
-      href="/profile"
-      className={cn(
-        "flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-xl transition-all duration-200 flex-1",
-        isActive && "bg-foreground"
-      )}
-      aria-label="Profile"
-    >
-      <Avatar className="w-5 h-5">
-        <AvatarImage src="https://github.com/shadcn.png" alt="Profile" />
-        <AvatarFallback
-          className={cn(
-            "text-[10px] transition-colors",
-            isActive ? "text-background" : "text-foreground"
-          )}
-        >
-          CN
-        </AvatarFallback>
-      </Avatar>
-      <span
-        className={cn(
-          "text-[10px] font-medium transition-colors",
-          isActive ? "text-background" : "text-foreground"
-        )}
-      >
-        Profile
-      </span>
-    </Link>
-  );
-});
-
-ProfileNavItem.displayName = "ProfileNavItem";
-
 function NavbarComponents() {
   const pathname = usePathname();
+  const { isAdmin } = useUser();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 h-18 rounded-t-2xl border-t border-border bg-background/95 backdrop-blur-sm shadow-lg z-50">
@@ -113,7 +75,19 @@ function NavbarComponents() {
             isActive={pathname === item.href}
           />
         ))}
-        <ProfileNavItem isActive={pathname === "/profile"} />
+
+        {isAdmin ? (
+          <NavLinkItem
+            item={{ href: "/admin", label: "Admin", icon: Shield }}
+            isActive={pathname === "/admin"}
+          />
+        ) : (
+          <NavLinkItem
+            item={{ href: "/riwayat", label: "Riwayat", icon: FileText }}
+            isActive={pathname === "/riwayat"}
+          />
+        )}
+        <NavUser />
       </div>
     </nav>
   );

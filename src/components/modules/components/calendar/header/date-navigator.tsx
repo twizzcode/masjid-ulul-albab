@@ -1,13 +1,8 @@
 import { formatDate } from "date-fns";
-import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-	buttonHover,
-	transition,
-} from "@/components/modules/components/calendar/animations";
 import { useCalendar } from "@/components/modules/components/calendar/contexts/calendar-context";
 
 import {
@@ -23,9 +18,6 @@ interface IProps {
 	view: TCalendarView;
 	events: IEvent[];
 }
-
-const MotionButton = motion.create(Button);
-const MotionBadge = motion.create(Badge);
 
 export function DateNavigator({ view, events }: IProps) {
 	const { selectedDate, setSelectedDate } = useCalendar();
@@ -56,62 +48,36 @@ export function DateNavigator({ view, events }: IProps) {
 	return (
 		<div className="space-y-0.5">
 			<div className="flex items-center gap-2">
-				<motion.span
-					className="text-lg font-semibold"
-					initial={{ x: -20, opacity: 0 }}
-					animate={{ x: 0, opacity: 1 }}
-					transition={transition}
-				>
+				<span className="text-lg font-semibold">
 					{month} {year}
-				</motion.span>
-				<AnimatePresence mode="wait">
-					<MotionBadge
-						key={eventCount}
-						variant="secondary"
-						initial={{ scale: 0.8, opacity: 0 }}
-						animate={{ scale: 1, opacity: 1 }}
-						exit={{ scale: 0.8, opacity: 0 }}
-						transition={transition}
-					>
-						{eventCount} events
-					</MotionBadge>
-				</AnimatePresence>
+				</span>
+				<Badge variant="secondary">
+					{eventCount} events
+				</Badge>
 			</div>
 
 			<div className="flex items-center gap-2">
-				<MotionButton
+				<Button
 					variant="outline"
 					size="icon"
 					className="h-6 w-6"
 					onClick={handlePrevious}
-					variants={buttonHover}
-					whileHover="hover"
-					whileTap="tap"
 				>
 					<ChevronLeft className="h-4 w-4" />
-				</MotionButton>
+				</Button>
 
-				<motion.p
-					className="text-sm text-muted-foreground"
-					initial={{ opacity: 0 }}
-					animate={{ opacity: 1 }}
-					transition={transition}
-					suppressHydrationWarning
-				>
+				<p className="text-sm text-muted-foreground" suppressHydrationWarning>
 					{mounted ? dateRange : "\u00A0"}
-				</motion.p>
+				</p>
 
-				<MotionButton
+				<Button
 					variant="outline"
 					size="icon"
 					className="h-6 w-6"
 					onClick={handleNext}
-					variants={buttonHover}
-					whileHover="hover"
-					whileTap="tap"
 				>
 					<ChevronRight className="h-4 w-4" />
-				</MotionButton>
+				</Button>
 			</div>
 		</div>
 	);

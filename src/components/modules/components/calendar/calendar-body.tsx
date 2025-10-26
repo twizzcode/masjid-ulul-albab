@@ -1,8 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
 import React from "react";
-import { fadeIn, transition } from "@/components/modules/components/calendar/animations";
 import { useCalendar } from "@/components/modules/components/calendar/contexts/calendar-context";
 import { AgendaEvents } from "@/components/modules/components/calendar/views/agenda-view/agenda-events";
 import { CalendarMonthView } from "@/components/modules/components/calendar/views/month-view/calendar-month-view";
@@ -17,15 +15,7 @@ export function CalendarBody() {
 
 	return (
 		<div className="flex-1 w-full overflow-auto relative">
-			<motion.div
-				key={view}
-				initial="initial"
-				animate="animate"
-				exit="exit"
-				variants={fadeIn}
-				transition={transition}
-				className="h-full"
-			>
+			<div className="h-full">
 				{view === "month" && (
 					<CalendarMonthView
 						events={allEvents}
@@ -43,18 +33,11 @@ export function CalendarBody() {
 					/>
 				)}
 				{view === "agenda" && (
-					<motion.div
-						key="agenda"
-						initial="initial"
-						animate="animate"
-						exit="exit"
-						variants={fadeIn}
-						transition={transition}
-					>
+					<div>
 						<AgendaEvents />
-					</motion.div>
+					</div>
 				)}
-			</motion.div>
+			</div>
 		</div>
 	);
 }

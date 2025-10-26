@@ -1,30 +1,5 @@
 import { BookingData, ScheduleValidation } from "./types";
 
-export const validateSchedule = (
-  startDate?: Date,
-  endDate?: Date
-): ScheduleValidation => {
-  if (!startDate || !endDate) {
-    return null;
-  }
-
-  const start = new Date(startDate);
-  const end = new Date(endDate);
-
-  if (end <= start) {
-    return {
-      type: "error",
-      message: "Waktu selesai harus lebih lama dari waktu mulai",
-    };
-  }
-
-  // TODO: Cek tabrakan dengan agenda lain dari database
-  return {
-    type: "success",
-    message: "Jadwal tersedia",
-  };
-};
-
 export const validateStep = (
   step: number,
   formData: Partial<BookingData>,
@@ -43,7 +18,7 @@ export const validateStep = (
         formData.startDate &&
         formData.endDate
       );
-      const isScheduleValid = scheduleValidation?.type !== "error";
+      const isScheduleValid = scheduleValidation?.type === "success";
       return hasAllScheduleFields && isScheduleValid;
     
     case 3: // Konfirmasi
@@ -59,9 +34,9 @@ export const validateFile = (file: File): string | null => {
     return "Hanya file PDF yang diperbolehkan";
   }
 
-  const maxSize = 1 * 1024 * 1024; // 1MB
+  const maxSize = 2 * 1024 * 1024; // 2MB
   if (file.size > maxSize) {
-    return "Ukuran file maksimal 1MB";
+    return "Ukuran file maksimal 2MB";
   }
 
   return null;

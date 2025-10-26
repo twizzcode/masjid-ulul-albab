@@ -1,16 +1,30 @@
 import { Button } from "@/components/ui/button";
-import { Calendar } from "lucide-react";
+import { Calendar, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { ScheduleValidation } from "./types";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 interface ScheduleValidationAlertProps {
   validation: ScheduleValidation;
+  isChecking?: boolean;
 }
 
 export function ScheduleValidationAlert({
   validation,
+  isChecking = false,
 }: ScheduleValidationAlertProps) {
   const router = useRouter();
+
+  if (isChecking) {
+    return (
+      <div className="rounded-lg border p-3 bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+        <p className="text-sm text-blue-700 dark:text-blue-400">
+          🔍 Memeriksa ketersediaan jadwal...
+        </p>
+      </div>
+    );
+  }
 
   if (!validation) return null;
 
@@ -23,15 +37,39 @@ export function ScheduleValidationAlert({
       }`}
     >
       <div className="flex items-start justify-between gap-3">
-        <p
-          className={`text-sm flex-1 ${
-            validation.type === "error"
-              ? "text-red-700 dark:text-red-400"
-              : "text-green-700 dark:text-green-400"
-          }`}
-        >
-          {validation.type === "error" ? "⚠️" : "✓"} {validation.message}
-        </p>
+        <div className="flex-1">
+          <p
+            className={`text-sm font-medium ${
+              validation.type === "error"
+                ? "text-red-700 dark:text-red-400"
+                : "text-green-700 dark:text-green-400"
+            }`}
+          >
+            {validation.type === "error" ? "⚠️" : "✓"} {validation.message}
+          </p>
+          
+          {validation.type === "error" && (validation as any).conflictingBooking && (
+            <div className="mt-2 pt-2 border-t border-red-200 dark:border-red-800 space-y-1">
+              <p className="text-xs text-red-600 dark:text-red-500 font-semibold">
+                Booking yang bentrok:
+              </p>
+              <p className="text-xs text-red-600 dark:text-red-500">
+                📌 {(validation as any).conflictingBooking.eventName}
+              </p>
+              <p className="text-xs text-red-600 dark:text-red-500">
+                🏢 {(validation as any).conflictingBooking.organizerName}
+              </p>
+              <p className="text-xs text-red-600 dark:text-red-500 flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                {format(new Date((validation as any).conflictingBooking.startDate), "dd MMM yyyy, HH:mm", { locale: id })} - {format(new Date((validation as any).conflictingBooking.endDate), "HH:mm", { locale: id })}
+              </p>
+              <p className="text-xs text-red-600 dark:text-red-500">
+                Status: {(validation as any).conflictingBooking.status === "approved" ? "Disetujui" : "Menunggu Persetujuan"}
+              </p>
+            </div>
+          )}
+        </div>
+        
         {validation.type === "error" && (
           <Button
             type="button"

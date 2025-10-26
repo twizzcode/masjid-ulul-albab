@@ -15,6 +15,7 @@ import { ScheduleValidationAlert } from "./schedule-validation-alert";
 interface ScheduleStepProps {
   formData: Partial<BookingData>;
   scheduleValidation: ScheduleValidation;
+  isCheckingAvailability?: boolean;
   startDateOpen: boolean;
   endDateOpen: boolean;
   onUpdate: (field: keyof BookingData, value: string | Date | File | undefined) => void;
@@ -25,6 +26,7 @@ interface ScheduleStepProps {
 export function ScheduleStep({
   formData,
   scheduleValidation,
+  isCheckingAvailability = false,
   startDateOpen,
   endDateOpen,
   onUpdate,
@@ -84,7 +86,10 @@ export function ScheduleStep({
           />
         </Field>
 
-        <ScheduleValidationAlert validation={scheduleValidation} />
+        <ScheduleValidationAlert 
+          validation={scheduleValidation} 
+          isChecking={isCheckingAvailability}
+        />
       </div>
     </OnboardingStep>
   );

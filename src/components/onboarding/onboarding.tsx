@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ChevronRight, ChevronLeft } from "lucide-react";
@@ -144,24 +143,16 @@ function OnboardingSteps({ children, className }: OnboardingStepsProps) {
 
   return (
     <div className={cn("relative", className)}>
-      <AnimatePresence mode="wait">
-        {steps.map((step, index) => {
-          if (index === currentStep) {
-            return (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                transition={{ duration: 0.3 }}
-              >
-                {step}
-              </motion.div>
-            );
-          }
-          return null;
-        })}
-      </AnimatePresence>
+      {steps.map((step, index) => {
+        if (index === currentStep) {
+          return (
+            <div key={index}>
+              {step}
+            </div>
+          );
+        }
+        return null;
+      })}
     </div>
   );
 }
