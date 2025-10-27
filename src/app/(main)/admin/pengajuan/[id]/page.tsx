@@ -215,9 +215,11 @@ export default function AdminPengajuanDetailPage() {
 
 	if (userLoading || !user || user.role !== "ADMIN" || isLoading) {
 		return (
-			<div className="p-4">
-				<div className="border rounded-xl p-4 overflow-y-auto">
-					<LoadingScreen message="Memuat detail pengajuan..." />
+			<div className="w-full h-full p-4 lg:p-6">
+				<div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl overflow-auto">
+					<div className="p-6 flex items-center justify-center h-full">
+						<LoadingScreen message="Memuat detail pengajuan..." />
+					</div>
 				</div>
 			</div>
 		);
@@ -277,9 +279,9 @@ export default function AdminPengajuanDetailPage() {
 				</DialogContent>
 			</Dialog>
 
-			<div className="p-4">
-				<div className="border rounded-xl p-4 overflow-y-auto">
-					<div className="w-full max-w-4xl mx-auto">
+			<div className="w-full h-full p-4 lg:p-6">
+				<div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl overflow-auto">
+					<div className="p-4 lg:p-6">
 						{/* Header */}
 						<div className="mb-6">
 							<Button variant="ghost" size="sm" onClick={() => router.push("/admin")} className="mb-4 -ml-2">

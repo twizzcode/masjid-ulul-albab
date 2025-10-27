@@ -7,6 +7,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from "@/components/ui/select";
+import {
 	Dialog,
 	DialogContent,
 	DialogDescription,
@@ -62,6 +69,7 @@ export default function AdminBookingsPage() {
   const [isLoadingOngoing, setIsLoadingOngoing] = useState(false);
   const [isLoadingArchived, setIsLoadingArchived] = useState(false);
   const [activeTab, setActiveTab] = useState<"ongoing" | "archived">("ongoing");
+  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "approved" | "rejected">("all");
   const [processingId, setProcessingId] = useState<string | null>(null);
   
   // Reject dialog state
@@ -280,14 +288,24 @@ export default function AdminBookingsPage() {
       );
     }
 
-    if (bookings.length === 0) {
+    // Filter bookings based on status
+    const filteredBookings = statusFilter === "all" 
+      ? bookings 
+      : bookings.filter(b => b.status === statusFilter);
+
+    if (filteredBookings.length === 0) {
       return (
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12">
             <FileText className="h-12 w-12 text-muted-foreground mb-4" />
             <p className="text-lg font-semibold mb-2">Belum Ada Data</p>
             <p className="text-sm text-muted-foreground text-center">
-              {activeTab === "ongoing" ? "Belum ada pengajuan yang masih berlaku" : "Belum ada pengajuan yang diarsipkan"}
+              {activeTab === "ongoing" 
+                ? statusFilter === "all"
+                  ? "Belum ada pengajuan yang masih berlaku"
+                  : `Belum ada pengajuan dengan status ${statusFilter === "pending" ? "Pending" : statusFilter === "approved" ? "Disetujui" : "Ditolak"}`
+                : "Belum ada pengajuan yang diarsipkan"
+              }
             </p>
           </CardContent>
         </Card>
@@ -296,7 +314,7 @@ export default function AdminBookingsPage() {
 
     return (
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {bookings.map(renderBookingCard)}
+        {filteredBookings.map(renderBookingCard)}
       </div>
     );
   };
@@ -304,9 +322,11 @@ export default function AdminBookingsPage() {
   // Show loading screen while verifying admin access
   if (userLoading) {
     return (
-      <div className="p-4 w-full h-auto">
-        <div className="border rounded-xl p-4 overflow-y-auto">
-          <LoadingScreen message="Memverifikasi akses admin..." />
+      <div className="w-full h-full p-4 lg:p-6">
+        <div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl overflow-auto">
+          <div className="p-6 flex items-center justify-center h-full">
+            <LoadingScreen message="Memverifikasi akses admin..." />
+          </div>
         </div>
       </div>
     );
@@ -362,33 +382,51 @@ export default function AdminBookingsPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="p-4 w-full h-auto">
-        <div className="border rounded-xl p-4 overflow-y-auto">
-          <div className="w-full max-w-7xl mx-auto">
-            <div className="mb-6">
-              <h1 className="text-2xl font-bold mb-1">Kelola Peminjaman</h1>
-              <p className="text-sm text-muted-foreground">Setujui atau tolak pengajuan peminjaman</p>
+      <div className="w-full h-full p-4 lg:p-6">
+        <div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl flex flex-col overflow-hidden">
+          <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "ongoing" | "archived")} className="w-full h-full flex flex-col">
+            {/* Header Section - Fixed */}
+            <div className="p-4 lg:p-6 border-b border-border">
+              <div className="mb-4">
+                <h1 className="text-2xl font-bold mb-1">Kelola Peminjaman</h1>
+                <p className="text-sm text-muted-foreground">Setujui atau tolak pengajuan peminjaman</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
+                <TabsList className="grid w-full max-w-md grid-cols-2">
+                  <TabsTrigger value="ongoing" className="gap-2">
+                    <ListChecks className="w-4 h-4" />Berlaku
+                  </TabsTrigger>
+                  <TabsTrigger value="archived" className="gap-2">
+                    <Archive className="w-4 h-4" />Arsip
+                  </TabsTrigger>
+                </TabsList>
+
+                {activeTab === "ongoing" && (
+                  <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as typeof statusFilter)}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                      <SelectValue placeholder="Filter Status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Semua Status</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Disetujui</SelectItem>
+                      <SelectItem value="rejected">Ditolak</SelectItem>
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
             </div>
 
-            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "ongoing" | "archived")} className="w-full">
-              <TabsList className="grid w-full max-w-md grid-cols-2">
-                <TabsTrigger value="ongoing" className="gap-2">
-                  <ListChecks className="w-4 h-4" />Berlaku
-                </TabsTrigger>
-                <TabsTrigger value="archived" className="gap-2">
-                  <Archive className="w-4 h-4" />Arsip
-                </TabsTrigger>
-              </TabsList>
+            {/* Content Section - Scrollable */}
+            <TabsContent value="ongoing" className="flex-1 overflow-auto p-4 lg:p-6 mt-0">
+              {renderBookingList(ongoingBookings, isLoadingOngoing)}
+            </TabsContent>
 
-              <TabsContent value="ongoing" className="mt-6">
-                {renderBookingList(ongoingBookings, isLoadingOngoing)}
-              </TabsContent>
-
-              <TabsContent value="archived" className="mt-6">
-                {renderBookingList(archivedBookings, isLoadingArchived)}
-              </TabsContent>
-            </Tabs>
-          </div>
+            <TabsContent value="archived" className="flex-1 overflow-auto p-4 lg:p-6 mt-0">
+              {renderBookingList(archivedBookings, isLoadingArchived)}
+            </TabsContent>
+          </Tabs>
         </div>
       </div>
     </>

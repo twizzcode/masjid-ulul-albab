@@ -16,9 +16,9 @@ const ProfilePage = () => {
       .toUpperCase()
       .slice(0, 2) || "G";
   return (
-    <section className="flex flex-1 w-full p-4">
-      <div className="flex flex-1 border rounded-xl p-4">
-        <div className="flex flex-col gap-2 w-full items-center justify-start">
+    <section className="w-full h-full p-4 lg:p-6">
+      <div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl overflow-auto">
+        <div className="p-4 lg:p-6 flex flex-col gap-2 items-center justify-start">
           <Avatar className="h-30 w-30">
             <AvatarImage
               src={user?.image || undefined}

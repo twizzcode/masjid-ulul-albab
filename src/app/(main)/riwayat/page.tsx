@@ -222,9 +222,11 @@ export default function RiwayatPage() {
 	// Show loading screen while checking authentication
 	if (userLoading) {
 		return (
-			<div className="p-4 w-full">
-				<div className="w-full h-full flex items-start justify-center p-4 overflow-auto border rounded-xl">
-					<LoadingScreen message="Memuat riwayat peminjaman..." />
+			<div className="w-full h-full p-4 lg:p-6">
+				<div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl overflow-auto">
+					<div className="p-6 flex items-center justify-center h-full">
+						<LoadingScreen message="Memuat riwayat peminjaman..." />
+					</div>
 				</div>
 			</div>
 		);
@@ -257,15 +259,16 @@ export default function RiwayatPage() {
 			</Dialog>
 
 			{user && (
-				<div className="p-4 w-full">
-					<div className="w-full h-full flex items-start justify-center p-4 overflow-auto border rounded-xl">
-						<div className="w-full max-w-7xl">
-							<div className="mb-6">
-								<h1 className="text-2xl font-bold mb-1">Riwayat Peminjaman</h1>
-								<p className="text-sm text-muted-foreground">Lihat riwayat peminjaman Anda</p>
-							</div>
+				<div className="w-full h-full p-4 lg:p-6">
+					<div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl flex flex-col overflow-hidden">
+						<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "ongoing" | "past")} className="w-full h-full flex flex-col">
+							{/* Header Section - Fixed */}
+							<div className="p-4 lg:p-6 border-b border-border">
+								<div className="mb-4">
+									<h1 className="text-2xl font-bold mb-1">Riwayat Peminjaman</h1>
+									<p className="text-sm text-muted-foreground">Lihat riwayat peminjaman Anda</p>
+								</div>
 
-							<Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "ongoing" | "past")} className="w-full">
 								<TabsList className="grid w-full max-w-md grid-cols-2">
 									<TabsTrigger value="ongoing" className="gap-2">
 										<Hourglass className="w-4 h-4" />Berlangsung
@@ -274,16 +277,17 @@ export default function RiwayatPage() {
 										<History className="w-4 h-4" />Selesai
 									</TabsTrigger>
 								</TabsList>
+							</div>
 
-								<TabsContent value="ongoing" className="mt-6">
-									{renderBookingList(ongoingBookings, isLoadingOngoing)}
-								</TabsContent>
+							{/* Content Section - Scrollable */}
+							<TabsContent value="ongoing" className="flex-1 overflow-auto p-4 lg:p-6 mt-0">
+								{renderBookingList(ongoingBookings, isLoadingOngoing)}
+							</TabsContent>
 
-								<TabsContent value="past" className="mt-6">
-									{renderBookingList(pastBookings, isLoadingPast)}
-								</TabsContent>
-							</Tabs>
-						</div>
+							<TabsContent value="past" className="flex-1 overflow-auto p-4 lg:p-6 mt-0">
+								{renderBookingList(pastBookings, isLoadingPast)}
+							</TabsContent>
+						</Tabs>
 					</div>
 				</div>
 			)}

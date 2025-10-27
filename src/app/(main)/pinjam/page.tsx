@@ -94,9 +94,11 @@ export default function PinjamPage() {
 	// Show loading screen while checking authentication
 	if (isLoading) {
 		return (
-			<div className="p-4">
-				<div className="w-full h-full flex items-start justify-center p-4 overflow-auto border rounded-xl">
-					<LoadingScreen message="Memuat halaman peminjaman..." />
+			<div className="w-full h-full p-4 lg:p-6">
+				<div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl overflow-auto">
+					<div className="p-6 flex items-center justify-center h-full">
+						<LoadingScreen message="Memuat halaman peminjaman..." />
+					</div>
 				</div>
 			</div>
 		);
@@ -148,9 +150,9 @@ export default function PinjamPage() {
 				</DialogContent>
 			</Dialog>
 
-			<div className="p-4">
-				<div className="w-full h-full flex items-start justify-center p-4 overflow-auto border rounded-xl">
-					<div className="w-full">
+			<div className="w-full h-full p-4 lg:p-6">
+				<div className="w-full h-full max-w-[1400px] mx-auto border rounded-xl overflow-auto lg:flex lg:items-center lg:justify-center">
+					<div className="p-4 lg:p-6 w-full lg:max-w-4xl">
 						{user && <BookingOnboarding onComplete={handleComplete} isSubmitting={isSubmitting} />}
 					</div>
 				</div>

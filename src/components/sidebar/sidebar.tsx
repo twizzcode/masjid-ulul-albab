@@ -6,14 +6,12 @@ import { usePathname } from "next/navigation";
 import { House, FileText, SquarePlus, CalendarRange, LucideIcon, Shield } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
-import NavUser from "./navuser";
+import NavUser from "@/components/navbar/navuser";
 
 interface NavItem {
   href: string;
   label: string;
   icon: LucideIcon;
-  hideLabel?: boolean;
-  isFAB?: boolean;
 }
 
 const navItems: NavItem[] = [
@@ -22,54 +20,47 @@ const navItems: NavItem[] = [
   { href: "/pinjam", label: "Pinjam", icon: SquarePlus },
 ];
 
-interface NavLinkItemProps {
+interface SidebarLinkProps {
   item: NavItem;
   isActive: boolean;
 }
 
-const NavLinkItem = memo(({ item, isActive }: NavLinkItemProps) => {
+const SidebarLink = memo(({ item, isActive }: SidebarLinkProps) => {
   const Icon = item.icon;
 
   return (
     <Link
       href={item.href}
       className={cn(
-        "flex flex-col items-center justify-center gap-1 py-2 px-3 rounded-xl transition-all duration-200 flex-1",
-        isActive && "bg-foreground"
+        "flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200",
+        isActive 
+          ? "bg-foreground text-background" 
+          : "text-foreground hover:bg-muted"
       )}
-      aria-label={item.label}
     >
-      <Icon
-        className={cn(
-          "w-5 h-5 transition-colors",
-          isActive ? "text-background" : "text-foreground"
-        )}
-      />
-      {!item.hideLabel && (
-        <span
-          className={cn(
-            "text-[10px] font-medium transition-colors",
-            isActive ? "text-background" : "text-foreground"
-          )}
-        >
-          {item.label}
-        </span>
-      )}
+      <Icon className="w-5 h-5" />
+      <span className="font-medium">{item.label}</span>
     </Link>
   );
 });
 
-NavLinkItem.displayName = "NavLinkItem";
+SidebarLink.displayName = "SidebarLink";
 
-function NavbarComponents() {
+function SidebarComponent() {
   const pathname = usePathname();
   const { isAdmin } = useUser();
 
   return (
-    <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-18 rounded-t-2xl border-t border-border bg-background/95 backdrop-blur-sm shadow-lg z-50">
-      <div className="flex items-center justify-around h-full px-2 gap-1">
+    <aside className="hidden lg:flex fixed left-0 top-0 bottom-0 w-64 border-r border-border bg-background flex-col">
+      {/* Logo/Brand */}
+      <div className="h-15 flex items-center px-6 border-b border-border">
+        <h1 className="text-lg font-bold">Masjid Ulul Albab</h1>
+      </div>
+
+      {/* Navigation Links */}
+      <nav className="flex-1 px-4 py-6 space-y-2">
         {navItems.map((item) => (
-          <NavLinkItem
+          <SidebarLink
             key={item.href}
             item={item}
             isActive={pathname === item.href}
@@ -77,20 +68,24 @@ function NavbarComponents() {
         ))}
 
         {isAdmin ? (
-          <NavLinkItem
+          <SidebarLink
             item={{ href: "/admin", label: "Admin", icon: Shield }}
             isActive={pathname === "/admin"}
           />
         ) : (
-          <NavLinkItem
+          <SidebarLink
             item={{ href: "/riwayat", label: "Riwayat", icon: FileText }}
             isActive={pathname === "/riwayat"}
           />
         )}
+      </nav>
+
+      {/* User Profile at Bottom - Using NavUser component */}
+      <div className="p-4 border-t border-border">
         <NavUser />
       </div>
-    </nav>
+    </aside>
   );
 }
 
-export default memo(NavbarComponents);
+export default memo(SidebarComponent);

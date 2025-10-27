@@ -14,30 +14,32 @@ export function CalendarBody() {
 	const allEvents = events;
 
 	return (
-		<div className="flex-1 w-full overflow-auto relative">
-			<div className="h-full">
-				{view === "month" && (
-					<CalendarMonthView
-						events={allEvents}
-					/>
-				)}
-				{view === "week" && (
+		<div className="flex-1 w-full overflow-hidden relative flex flex-col">
+			{view === "month" && (
+				<CalendarMonthView
+					events={allEvents}
+				/>
+			)}
+			{view === "week" && (
+				<div className="h-full overflow-auto">
 					<CalendarWeekView
 						events={allEvents}
 					/>
-				)}
-				{view === "threeDays" && (
+				</div>
+			)}
+			{view === "threeDays" && (
+				<div className="h-full overflow-auto">
 					<CalendarDayView
 						events={allEvents}
 						daysCount={3}
 					/>
-				)}
-				{view === "agenda" && (
-					<div>
-						<AgendaEvents />
-					</div>
-				)}
-			</div>
+				</div>
+			)}
+			{view === "agenda" && (
+				<div className="h-full overflow-auto">
+					<AgendaEvents />
+				</div>
+			)}
 		</div>
 	);
 }

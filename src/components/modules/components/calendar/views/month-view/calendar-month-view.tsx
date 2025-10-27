@@ -30,27 +30,31 @@ export function CalendarMonthView({ events }: IProps) {
 	);
 
 	return (
-		<div>
-			<div className="grid grid-cols-7">
+		<div className="flex flex-col h-full">
+			{/* Header hari - tidak ikut scroll */}
+			<div className="grid grid-cols-7 border-b border-border bg-background sticky top-0 z-10">
 				{WEEK_DAYS.map((day) => (
 					<div
 						key={day}
-						className="flex items-center justify-center py-2"
+						className="flex items-center justify-center py-3 border-r border-border last:border-r-0"
 					>
-						<span className="text-xs font-medium text-t-quaternary">{day}</span>
+						<span className="text-sm font-semibold text-foreground">{day}</span>
 					</div>
 				))}
 			</div>
 
-			<div className="grid grid-cols-7 overflow-hidden min-h-[450px] h-full">
-				{cells.map((cell, index) => (
-					<DayCell
-						key={index}
-						cell={cell}
-						events={events}
-						eventPositions={eventPositions}
-					/>
-				))}
+			{/* Grid tanggal - bisa scroll */}
+			<div className="flex-1 overflow-auto scrollbar-hide">
+				<div className="grid grid-cols-7 min-h-[500px]">
+					{cells.map((cell, index) => (
+						<DayCell
+							key={index}
+							cell={cell}
+							events={events}
+							eventPositions={eventPositions}
+						/>
+					))}
+				</div>
 			</div>
 		</div>
 	);

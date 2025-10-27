@@ -15,8 +15,6 @@ import type {
 } from "@/components/modules/components/calendar/interfaces";
 import { EventBullet } from "@/components/modules/components/calendar/views/month-view/event-bullet";
 import { MonthEventBadge } from "@/components/modules/components/calendar/views/month-view/month-event-badge";
-import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
 
 interface IProps {
   cell: ICalendarCell;
@@ -130,16 +128,7 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
           )}
         >
           {(cellEvents.length === 0 && !isMobile) ? (
-            <div className="w-full h-full flex justify-center items-center group">
-              <Button
-                variant="ghost"
-                className="border opacity-0 group-hover:opacity-100 transition-opacity duration-200"
-                onClick={() => router.push("/pinjam")}
-              >
-                <Plus className="h-4 w-4" />
-                <span className="max-sm:hidden">Ajukan Peminjaman</span>
-              </Button>
-            </div>
+            null
           ) : (
             [0, 1, 2].map(renderEventAtPosition)
           )}

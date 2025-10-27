@@ -18,7 +18,7 @@ export async function Calendar() {
 	return (
 		<CalendarProvider events={events} users={users} view="month">
 			<DndProvider showConfirmation={false}>
-				<div className="w-full h-full flex flex-col border rounded-xl overflow-hidden">
+				<div className="w-full h-full flex flex-col">
 					<CalendarHeader />
 					<CalendarBody />
 				</div>
