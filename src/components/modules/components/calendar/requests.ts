@@ -1,8 +1,12 @@
 import prisma from "@/lib/prisma";
 import type { IEvent } from "./interfaces";
 import { USERS_MOCK } from "@/components/modules/components/calendar/mocks";
+import { unstable_noStore as noStore } from 'next/cache';
 
 export const getEvents = async (): Promise<IEvent[]> => {
+    // Disable Next.js caching - always fetch fresh data
+    noStore();
+    
     try {
         // Fetch ALL bookings from database (pending, approved, rejected)
         const bookings = await prisma.booking.findMany({
