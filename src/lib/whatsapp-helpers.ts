@@ -29,7 +29,7 @@ export function generateVerificationToken(adminId: string, bookingId: string): s
  */
 export function generateVerificationLinks(adminId: string, bookingId: string) {
 	const token = generateVerificationToken(adminId, bookingId);
-	const baseUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+	const baseUrl = process.env.NEXT_PUBLIC_API_URL || "https://masjidululalbab.my.id";
 
 	return {
 		approveUrl: `${baseUrl}/api/admin/bookings/verify/${bookingId}?action=approve&token=${token}`,
