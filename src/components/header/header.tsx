@@ -2,12 +2,15 @@
 
 import { usePathname } from 'next/navigation'
 import React from 'react'
+import { Button } from '../ui/button'
+import { MessageSquare } from 'lucide-react'
+import Link from 'next/link'
 
 const HeaderComponent = () => {
   const pathname = usePathname();
 
   return (
-    <header className='fixed top-0 w-full h-15 flex px-6 items-center border-b border-border bg-background lg:left-64'>
+    <header className='fixed top-0 left-0 right-0 h-15 flex px-6 items-center justify-between border-b border-border bg-background lg:left-64'>
       {/* Mobile: show title */}
       <div className='lg:hidden'>
         {pathname === '/' && (
@@ -18,9 +21,15 @@ const HeaderComponent = () => {
         )}
       </div>
       
-      {/* Desktop: empty header for now */}
-      <div className='hidden lg:block'>
-        {/* Content akan diisi nanti */}
+      {/* Feedback button - Both Mobile & Desktop */}
+      <div className='flex items-center gap-3 ml-auto'>
+        <Link href="/feedback">
+          <Button variant="outline" size="sm" className="gap-2">
+            <MessageSquare className="w-4 h-4" />
+            <span className="hidden sm:inline">Beri Masukan</span>
+            <span className="sm:hidden">Masukan</span>
+          </Button>
+        </Link>
       </div>
     </header>
   )

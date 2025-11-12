@@ -3,7 +3,7 @@
 import React, { memo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { House, FileText, SquarePlus, CalendarRange, LucideIcon, Shield } from "lucide-react";
+import { House, FileText, SquarePlus, CalendarRange, LucideIcon, Shield, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUser } from "@/hooks/use-user";
 import NavUser from "@/components/navbar/navuser";
@@ -70,7 +70,7 @@ function SidebarComponent() {
         {isAdmin ? (
           <SidebarLink
             item={{ href: "/admin", label: "Admin", icon: Shield }}
-            isActive={pathname === "/admin"}
+            isActive={pathname.startsWith("/admin")}
           />
         ) : (
           <SidebarLink

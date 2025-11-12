@@ -79,7 +79,7 @@ function NavbarComponents() {
         {isAdmin ? (
           <NavLinkItem
             item={{ href: "/admin", label: "Admin", icon: Shield }}
-            isActive={pathname === "/admin"}
+            isActive={pathname.startsWith("/admin")}
           />
         ) : (
           <NavLinkItem
