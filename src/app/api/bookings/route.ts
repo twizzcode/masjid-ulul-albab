@@ -6,6 +6,13 @@ import { headers } from "next/headers";
 import prisma from "@/lib/prisma";
 import { r2Client, R2_BUCKET_NAME, R2_PUBLIC_URL } from "@/lib/r2";
 import { getAdminWhatsAppUrl } from "@/lib/whatsapp-helpers";
+import {
+  sanitizeString,
+  sanitizePhoneNumber,
+  validateDateRange,
+  validateFile,
+  bookingCreateSchema,
+} from "@/lib/validation";
 
 export async function POST(req: NextRequest) {
 	try {
@@ -24,50 +31,79 @@ export async function POST(req: NextRequest) {
 		// Parse multipart form data
 		const formData = await req.formData();
 
-		const contactName = formData.get("contactName") as string;
-		const contactPhone = formData.get("contactPhone") as string;
-		const organizerName = formData.get("organizerName") as string;
-		const eventName = formData.get("eventName") as string;
-		const location = formData.get("location") as string;
-		const startDate = formData.get("startDate") as string;
-		const endDate = formData.get("endDate") as string;
+		const rawContactName = formData.get("contactName") as string;
+		const rawContactPhone = formData.get("contactPhone") as string;
+		const rawOrganizerName = formData.get("organizerName") as string;
+		const rawEventName = formData.get("eventName") as string;
+		const rawLocation = formData.get("location") as string;
+		const rawStartDate = formData.get("startDate") as string;
+		const rawEndDate = formData.get("endDate") as string;
 		const letterFile = formData.get("letterFile") as File | null;
 
 		// Validasi required fields
 		if (
-			!contactName ||
-			!contactPhone ||
-			!organizerName ||
-			!eventName ||
-			!location ||
-			!startDate ||
-			!endDate ||
+			!rawContactName ||
+			!rawContactPhone ||
+			!rawOrganizerName ||
+			!rawEventName ||
+			!rawLocation ||
+			!rawStartDate ||
+			!rawEndDate ||
 			!letterFile
 		) {
-			return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+			return NextResponse.json({ error: "Semua field wajib diisi" }, { status: 400 });
 		}
 
-		// Validate file type
-		if (letterFile.type !== "application/pdf") {
-			return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
-		}
+		// Sanitize text inputs to prevent XSS
+		const contactName = sanitizeString(rawContactName);
+		const organizerName = sanitizeString(rawOrganizerName);
+		const eventName = sanitizeString(rawEventName);
+		const location = sanitizeString(rawLocation);
 
-		// Validate file size (max 2MB)
-		const maxSize = 2 * 1024 * 1024; // 2MB
-		if (letterFile.size > maxSize) {
+		// Validate phone number
+		const phoneValidation = sanitizePhoneNumber(rawContactPhone);
+		if (!phoneValidation.isValid) {
 			return NextResponse.json(
-				{ error: "File size must be less than 2MB" },
+				{ error: phoneValidation.error },
 				{ status: 400 }
 			);
 		}
+		const contactPhone = phoneValidation.sanitized;
 
-		// Validasi jadwal
-		const start = new Date(startDate);
-		const end = new Date(endDate);
+		// Validate using Zod schema
+		const validation = bookingCreateSchema.safeParse({
+			contactName,
+			contactPhone,
+			organizerName,
+			eventName,
+			location,
+			startDate: rawStartDate,
+			endDate: rawEndDate,
+		});
 
-		if (end <= start) {
-			return NextResponse.json({ error: "End date must be after start date" }, { status: 400 });
+		if (!validation.success) {
+			const errors = validation.error.errors.map((err) => err.message).join(", ");
+			return NextResponse.json({ error: errors }, { status: 400 });
 		}
+
+		// Validate file
+		const fileValidation = validateFile(letterFile, {
+			maxSize: 2 * 1024 * 1024, // 2MB
+			allowedTypes: ["application/pdf"],
+		});
+
+		if (!fileValidation.isValid) {
+			return NextResponse.json({ error: fileValidation.error }, { status: 400 });
+		}
+
+		// Validate date range
+		const dateValidation = validateDateRange(rawStartDate, rawEndDate);
+		if (!dateValidation.isValid) {
+			return NextResponse.json({ error: dateValidation.error }, { status: 400 });
+		}
+
+		const start = dateValidation.start!;
+		const end = dateValidation.end!;
 
 		// Cek konflik jadwal
 		const conflictingBooking = await prisma.booking.findFirst({
@@ -122,85 +158,92 @@ export async function POST(req: NextRequest) {
 		});
 
 		// Upload file to R2 with booking ID as folder
-		const fileExtension = letterFile.name.split(".").pop();
-		const uniqueId = nanoid(10);
-		const timestamp = Date.now();
-		// Structure: bookings/{bookingId}/letter-{timestamp}-{random}.pdf
-		const fileName = `bookings/${booking.id}/letter-${timestamp}-${uniqueId}.${fileExtension}`;
+		try {
+			const fileExtension = letterFile.name.split(".").pop();
+			const uniqueId = nanoid(10);
+			const timestamp = Date.now();
+			// Structure: bookings/{bookingId}/letter-{timestamp}-{random}.pdf
+			const fileName = `bookings/${booking.id}/letter-${timestamp}-${uniqueId}.${fileExtension}`;
 
-		const arrayBuffer = await letterFile.arrayBuffer();
-		const buffer = Buffer.from(arrayBuffer);
+			const arrayBuffer = await letterFile.arrayBuffer();
+			const buffer = Buffer.from(arrayBuffer);
 
-		const uploadCommand = new PutObjectCommand({
-			Bucket: R2_BUCKET_NAME,
-			Key: fileName,
-			Body: buffer,
-			ContentType: "application/pdf",
-			ContentDisposition: "inline", // Allow inline viewing instead of forcing download
-			CacheControl: "public, max-age=31536000", // Cache for 1 year
-			Metadata: {
-				bookingId: booking.id,
-				originalName: letterFile.name,
-				uploadedBy: session.user.id,
-				uploadedAt: new Date().toISOString(),
-			},
-		});
-
-		await r2Client.send(uploadCommand);
-
-		const letterUrl = `${R2_PUBLIC_URL}/${fileName}`;
-
-		// Update booking with letterUrl
-		await prisma.booking.update({
-			where: { id: booking.id},
-			data: { letterUrl },
-			include: {
-				user: {
-					select: {
-						name: true,
-					},
+			const uploadCommand = new PutObjectCommand({
+				Bucket: R2_BUCKET_NAME,
+				Key: fileName,
+				Body: buffer,
+				ContentType: "application/pdf",
+				ContentDisposition: "inline", // Allow inline viewing instead of forcing download
+				CacheControl: "public, max-age=31536000", // Cache for 1 year
+				Metadata: {
+					bookingId: booking.id,
+					originalName: letterFile.name,
+					uploadedBy: session.user.id,
+					uploadedAt: new Date().toISOString(),
 				},
-			},
-		});
-
-		// Get first admin for WhatsApp notification
-		const admin = await prisma.user.findFirst({
-			where: { role: "ADMIN" },
-			select: { id: true },
-		});
-
-		// Generate WhatsApp notification link (optional - untuk development)
-		let whatsappUrl: string | undefined;
-		if (admin && process.env.ADMIN_WHATSAPP_NUMBER) {
-			whatsappUrl = getAdminWhatsAppUrl(process.env.ADMIN_WHATSAPP_NUMBER, {
-				bookingId: booking.id,
-				eventName,
-				organizerName,
-				contactName,
-				contactPhone,
-				location,
-				startDate: start,
-				endDate: end,
-				letterUrl,
-				adminId: admin.id,
 			});
-		}
 
-		return NextResponse.json(
-			{
-				success: true,
-				message: "Booking created successfully",
-				booking: {
-					id: booking.id,
-					eventName: booking.eventName,
-					status: booking.status,
-					createdAt: booking.createdAt,
+			await r2Client.send(uploadCommand);
+
+			const letterUrl = `${R2_PUBLIC_URL}/${fileName}`;
+
+			// Update booking with letterUrl
+			const updatedBooking = await prisma.booking.update({
+				where: { id: booking.id },
+				data: { letterUrl },
+			});
+
+			// Get first admin for WhatsApp notification
+			const admin = await prisma.user.findFirst({
+				where: { role: "ADMIN" },
+				select: { id: true },
+			});
+
+			// Generate WhatsApp notification link (optional - untuk development)
+			let whatsappUrl: string | undefined;
+			if (admin && process.env.ADMIN_WHATSAPP_NUMBER) {
+				whatsappUrl = getAdminWhatsAppUrl(process.env.ADMIN_WHATSAPP_NUMBER, {
+					bookingId: booking.id,
+					eventName,
+					organizerName,
+					contactName,
+					contactPhone,
+					location,
+					startDate: start,
+					endDate: end,
+					letterUrl,
+					adminId: admin.id,
+				});
+			}
+
+			return NextResponse.json(
+				{
+					success: true,
+					message: "Booking created successfully",
+					booking: {
+						id: updatedBooking.id,
+						eventName: updatedBooking.eventName,
+						status: updatedBooking.status,
+						createdAt: updatedBooking.createdAt,
+					},
+					// Optional: return WhatsApp URL untuk testing
+					...(whatsappUrl && { whatsappNotificationUrl: whatsappUrl }),
 				},
-				// Optional: return WhatsApp URL untuk testing
-				...(whatsappUrl && { whatsappNotificationUrl: whatsappUrl }),
-			},
-			{ status: 201 }
-		);
+				{ status: 201 }
+			);
+		} catch (uploadError) {
+			console.error("File upload error:", uploadError);
+			
+			// Delete the booking if upload fails
+			await prisma.booking.delete({
+				where: { id: booking.id },
+			});
+
+			return NextResponse.json(
+				{ error: "Gagal mengupload file. Silakan coba lagi." },
+				{ status: 500 }
+			);
+		}
 	} catch (error) {
 		console.error("Create booking error:", error);
 		return NextResponse.json({ error: "Failed to create booking" }, { status: 500 });

@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import {
+  sanitizeString,
+  feedbackCreateSchema,
+} from "@/lib/validation";
 
 export async function POST(request: NextRequest) {
   try {
@@ -10,31 +14,28 @@ export async function POST(request: NextRequest) {
     });
 
     const body = await request.json();
-    const { content, isAnonymous, submitterName } = body;
+    const { content: rawContent, isAnonymous, submitterName: rawSubmitterName } = body;
 
-    // Validasi content
-    if (!content || typeof content !== "string" || content.trim().length === 0) {
+    // Sanitize inputs to prevent XSS
+    const content = sanitizeString(rawContent);
+    const submitterName = rawSubmitterName ? sanitizeString(rawSubmitterName) : null;
+
+    // Validate using Zod schema
+    const validation = feedbackCreateSchema.safeParse({
+      content,
+      isAnonymous: Boolean(isAnonymous),
+      submitterName,
+    });
+
+    if (!validation.success) {
+      const errors = validation.error.errors.map((err) => err.message).join(", ");
       return NextResponse.json(
-        { error: "Konten feedback tidak boleh kosong" },
+        { error: errors },
         { status: 400 }
       );
     }
 
-    if (content.trim().length < 10) {
-      return NextResponse.json(
-        { error: "Konten feedback minimal 10 karakter" },
-        { status: 400 }
-      );
-    }
-
-    if (content.trim().length > 1000) {
-      return NextResponse.json(
-        { error: "Konten feedback maksimal 1000 karakter" },
-        { status: 400 }
-      );
-    }
-
-    // Validasi nama jika tidak anonymous
+    // Additional validation: if not anonymous, name is required
     if (!isAnonymous && (!submitterName || submitterName.trim().length === 0)) {
       return NextResponse.json(
         { error: "Nama harus diisi jika tidak memilih anonymous" },

@@ -19,22 +19,84 @@ export default function FeedbackPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow letters, spaces, dots, apostrophes, and hyphens
+    const sanitized = value.replace(/[^a-zA-Z\s.'\-]/g, "");
+    setSubmitterName(sanitized);
+  };
+
+  const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    // Remove HTML tags, dangerous characters, and excessive symbols
+    let sanitized = value
+      .replace(/<[^>]*>/g, "") // Remove HTML tags
+      .replace(/[<>{}[\]\\]/g, "") // Remove brackets and backslash
+      .replace(/[*#@$%^&+=|~`]/g, "") // Remove special symbols
+      .replace(/_{3,}/g, "__") // Limit underscores (max 2 consecutive)
+      .replace(/-{4,}/g, "---") // Limit dashes (max 3 consecutive)
+      .replace(/\.{4,}/g, "...") // Limit dots (max 3 consecutive)
+      .replace(/!{3,}/g, "!!") // Limit exclamation marks (max 2)
+      .replace(/\?{3,}/g, "??"); // Limit question marks (max 2)
+    
+    setContent(sanitized);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    // Validasi content
     if (!content.trim()) {
-      toast.error("Konten feedback tidak boleh kosong");
+      toast.error("Validasi Gagal", {
+        description: "Konten feedback tidak boleh kosong",
+      });
       return;
     }
 
     if (content.trim().length < 10) {
-      toast.error("Konten feedback minimal 10 karakter");
+      toast.error("Validasi Gagal", {
+        description: "Konten feedback minimal 10 karakter",
+      });
       return;
     }
 
-    if (!isAnonymous && !submitterName.trim()) {
-      toast.error("Nama harus diisi jika tidak memilih anonymous");
+    if (content.trim().length > 1000) {
+      toast.error("Validasi Gagal", {
+        description: "Konten feedback maksimal 1000 karakter",
+      });
       return;
+    }
+
+    // Validasi nama jika tidak anonymous
+    if (!isAnonymous) {
+      if (!submitterName.trim()) {
+        toast.error("Validasi Gagal", {
+          description: "Nama harus diisi jika tidak memilih anonymous",
+        });
+        return;
+      }
+
+      if (submitterName.trim().length < 3) {
+        toast.error("Validasi Gagal", {
+          description: "Nama minimal 3 karakter",
+        });
+        return;
+      }
+
+      if (submitterName.trim().length > 100) {
+        toast.error("Validasi Gagal", {
+          description: "Nama maksimal 100 karakter",
+        });
+        return;
+      }
+
+      // Validasi format nama (hanya huruf, spasi, titik, apostrof, tanda hubung)
+      if (!/^[a-zA-Z\s.'-]+$/.test(submitterName.trim())) {
+        toast.error("Validasi Gagal", {
+          description: "Nama hanya boleh mengandung huruf, spasi, titik, apostrof, dan tanda hubung",
+        });
+        return;
+      }
     }
 
     try {
@@ -74,7 +136,9 @@ export default function FeedbackPage() {
       }, 2000);
     } catch (error) {
       console.error("Submit feedback error:", error);
-      toast.error(error instanceof Error ? error.message : "Gagal mengirim feedback");
+      toast.error("Gagal mengirim feedback", {
+        description: error instanceof Error ? error.message : "Terjadi kesalahan, silakan coba lagi",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -150,10 +214,13 @@ export default function FeedbackPage() {
                     id="name"
                     placeholder="Masukkan nama Anda"
                     value={submitterName}
-                    onChange={(e) => setSubmitterName(e.target.value)}
+                    onChange={handleNameChange}
                     maxLength={100}
                     className="text-base"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Hanya huruf, spasi, titik, apostrof, dan tanda hubung
+                  </p>
                 </div>
               )}
 
@@ -166,13 +233,13 @@ export default function FeedbackPage() {
                   id="content"
                   placeholder="Tuliskan saran, kritik, atau masukan Anda di sini... (minimal 10 karakter)"
                   value={content}
-                  onChange={(e) => setContent(e.target.value)}
+                  onChange={handleContentChange}
                   rows={8}
                   maxLength={1000}
                   className="resize-none text-base"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>Minimal 10 karakter</span>
+                  <span>Minimal 10 karakter (huruf, angka, spasi, tanda baca standar)</span>
                   <span className={remainingChars < 100 ? "text-orange-500 font-medium" : ""}>
                     {remainingChars} karakter tersisa
                   </span>

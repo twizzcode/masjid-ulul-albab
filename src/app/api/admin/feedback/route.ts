@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { sanitizeMonthFilter } from "@/lib/validation";
 
 export async function GET(request: NextRequest) {
   try {
@@ -8,7 +9,15 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const filter = searchParams.get("filter") || "all"; // all, read, unread
-    const month = searchParams.get("month"); // Format: YYYY-MM
+    const rawMonth = searchParams.get("month"); // Format: YYYY-MM
+
+    // Validate filter parameter
+    if (!["all", "read", "unread"].includes(filter)) {
+      return NextResponse.json(
+        { error: "Invalid filter parameter" },
+        { status: 400 }
+      );
+    }
 
     const whereClause: Record<string, unknown> = {};
 
@@ -19,8 +28,9 @@ export async function GET(request: NextRequest) {
       whereClause.isRead = false;
     }
 
-    // Filter by month
-    if (month && month !== "all") {
+    // Filter by month - with sanitization
+    const month = sanitizeMonthFilter(rawMonth);
+    if (month) {
       const [year, monthNum] = month.split("-").map(Number);
       const startDate = new Date(year, monthNum - 1, 1); // First day of month
       const endDate = new Date(year, monthNum, 0, 23, 59, 59, 999); // Last day of month

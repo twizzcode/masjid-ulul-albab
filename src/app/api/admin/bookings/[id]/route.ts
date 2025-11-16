@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-helpers";
+import {
+  validateId,
+  bookingStatusUpdateSchema,
+  sanitizeString,
+} from "@/lib/validation";
 
 // GET single booking (admin only)
 export async function GET(
@@ -11,6 +16,15 @@ export async function GET(
     await requireAdmin();
 
     const { id } = await params;
+
+    // Validate ID format
+    const idValidation = validateId(id);
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
+    }
 
     const booking = await prisma.booking.findUnique({
       where: { id },
@@ -58,33 +72,46 @@ export async function PATCH(
     // Require admin access
     const { session } = await requireAdmin();
     
-    const body = await request.json();
-    const { status, rejectionReason } = body;
-
-    if (!status || !["approved", "rejected"].includes(status)) {
-      return NextResponse.json(
-        { error: "Invalid status. Must be 'approved' or 'rejected'" },
-        { status: 400 }
-      );
-    }
-
-    if (status === "rejected" && !rejectionReason) {
-      return NextResponse.json(
-        { error: "Rejection reason is required when rejecting a booking" },
-        { status: 400 }
-      );
-    }
-
     const { id } = await params;
+
+    // Validate ID format
+    const idValidation = validateId(id);
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { status: rawStatus, rejectionReason: rawRejectionReason } = body;
+
+    // Sanitize inputs
+    const status = rawStatus ? sanitizeString(rawStatus) : null;
+    const rejectionReason = rawRejectionReason ? sanitizeString(rawRejectionReason) : null;
+
+    // Validate using Zod schema
+    const validation = bookingStatusUpdateSchema.safeParse({
+      status,
+      rejectionReason,
+    });
+
+    if (!validation.success) {
+      const errors = validation.error.errors.map((err) => err.message).join(", ");
+      return NextResponse.json(
+        { error: errors },
+        { status: 400 }
+      );
+    }
 
     // Update booking status
     const booking = await prisma.booking.update({
       where: { id },
       data: {
-        status,
-        rejectionReason: status === "rejected" ? rejectionReason : null,
-        approvedBy: status === "approved" ? session.user.id : null,
-        approvedAt: status === "approved" ? new Date() : null,
+        status: validation.data.status,
+        rejectionReason: validation.data.status === "rejected" ? validation.data.rejectionReason : null,
+        approvedBy: validation.data.status === "approved" ? session.user.id : null,
+        approvedAt: validation.data.status === "approved" ? new Date() : null,
       },
       include: {
         user: true,
@@ -121,6 +148,15 @@ export async function DELETE(
     await requireAdmin();
 
     const { id } = await params;
+
+    // Validate ID format
+    const idValidation = validateId(id);
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
+    }
 
     await prisma.booking.delete({
       where: { id },

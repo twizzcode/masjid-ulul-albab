@@ -227,6 +227,7 @@ interface OnboardingActionsProps {
   nextLabel?: string;
   finishLabel?: string;
   onFinish?: () => void;
+  onNextAttempt?: () => boolean; // Callback before proceeding to next step
   hideBack?: boolean;
   hideNext?: boolean;
   disableNext?: boolean;
@@ -239,6 +240,7 @@ function OnboardingActions({
   nextLabel = "Continue",
   finishLabel = "Finish",
   onFinish,
+  onNextAttempt,
   hideBack = false,
   hideNext = false,
   disableNext = false,
@@ -249,6 +251,14 @@ function OnboardingActions({
   const isLastStep = currentStep === totalSteps - 1;
 
   const handleNext = () => {
+    // If onNextAttempt is provided and returns false, don't proceed
+    if (onNextAttempt && !isLastStep) {
+      const canProceed = onNextAttempt();
+      if (!canProceed) {
+        return;
+      }
+    }
+
     if (isLastStep && onFinish) {
       onFinish();
     } else {

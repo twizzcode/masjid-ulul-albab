@@ -15,6 +15,8 @@ import { ContactInfoStep } from "./booking/contact-info-step";
 import { EventDetailsStep } from "./booking/event-details-step";
 import { ScheduleStep } from "./booking/schedule-step";
 import { ConfirmationStep } from "./booking/confirmation-step";
+import { toast } from "sonner";
+import { getStepValidationErrors } from "./booking/validation";
 
 export function BookingOnboarding({
 	onComplete,
@@ -40,6 +42,26 @@ export function BookingOnboarding({
 
 	const handleFinish = () => {
 		onComplete?.(formData as BookingData);
+	};
+
+	const handleNextStep = () => {
+		// Validate current step before proceeding
+		const errors = getStepValidationErrors(currentStep, formData, scheduleValidation);
+		
+		if (errors.length > 0) {
+			// Show all errors as toast, one by one
+			errors.forEach((error, index) => {
+				setTimeout(() => {
+					toast.error("Validasi Gagal", {
+						description: error.message,
+						duration: 3000,
+					});
+				}, index * 100); // Stagger toasts slightly
+			});
+			return false;
+		}
+		
+		return true;
 	};
 
 	return (
@@ -85,7 +107,8 @@ export function BookingOnboarding({
 					nextLabel="Lanjutkan"
 					finishLabel={isSubmitting ? "Mengirim..." : "Kirim Pengajuan"}
 					onFinish={handleFinish}
-					disableNext={!canProceedToNextStep(currentStep) || isSubmitting || isCheckingAvailability}
+					onNextAttempt={handleNextStep}
+					disableNext={isSubmitting || isCheckingAvailability}
 				/>
 			</Onboarding>
 		</div>

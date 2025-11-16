@@ -10,6 +10,20 @@ interface ContactInfoStepProps {
 }
 
 export function ContactInfoStep({ formData, onUpdate }: ContactInfoStepProps) {
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow letters, spaces, dots, apostrophes, and hyphens
+    const sanitized = value.replace(/[^a-zA-Z\s.'\-]/g, "");
+    onUpdate("contactName", sanitized);
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    // Only allow numbers, +, and spaces
+    const sanitized = value.replace(/[^\d+\s]/g, "");
+    onUpdate("contactPhone", sanitized);
+  };
+
   return (
     <OnboardingStep
       title="Informasi Narahubung"
@@ -24,9 +38,13 @@ export function ContactInfoStep({ formData, onUpdate }: ContactInfoStepProps) {
           <Input
             placeholder="Masukkan nama lengkap"
             className="text-xs"
-            value={formData.contactName}
-            onChange={(e) => onUpdate("contactName", e.target.value)}
+            value={formData.contactName || ""}
+            onChange={handleNameChange}
+            maxLength={100}
           />
+          <p className="text-xs text-muted-foreground mt-1">
+            Hanya huruf, spasi, titik, apostrof, dan tanda hubung
+          </p>
         </Field>
 
         <Field>
@@ -34,12 +52,15 @@ export function ContactInfoStep({ formData, onUpdate }: ContactInfoStepProps) {
             Nomor Kontak <span className="text-red-500">*</span>
           </FieldLabel>
           <Input
-            placeholder="Nomor WhatsApp"
-            type="number"
+            placeholder="08xxxxxxxxxx atau +628xxxxxxxxxx"
             className="text-xs"
-            value={formData.contactPhone}
-            onChange={(e) => onUpdate("contactPhone", e.target.value)}
+            value={formData.contactPhone || ""}
+            onChange={handlePhoneChange}
+            maxLength={15}
           />
+          <p className="text-xs text-muted-foreground mt-1">
+            Format: 08xx atau +628xx (10-15 digit)
+          </p>
         </Field>
       </div>
     </OnboardingStep>

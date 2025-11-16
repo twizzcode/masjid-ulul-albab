@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { requireAdmin } from "@/lib/auth-helpers";
+import { validateId } from "@/lib/validation";
 
 // Mark feedback as read
 export async function PATCH(
@@ -11,8 +12,26 @@ export async function PATCH(
     await requireAdmin();
 
     const { id } = await params;
+
+    // Validate ID format
+    const idValidation = validateId(id);
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
     const { isRead } = body;
+
+    // Validate isRead is boolean
+    if (typeof isRead !== "boolean") {
+      return NextResponse.json(
+        { error: "isRead harus berupa boolean (true/false)" },
+        { status: 400 }
+      );
+    }
 
     const feedback = await prisma.feedback.update({
       where: { id },
@@ -49,6 +68,15 @@ export async function DELETE(
     await requireAdmin();
 
     const { id } = await params;
+
+    // Validate ID format
+    const idValidation = validateId(id);
+    if (!idValidation.isValid) {
+      return NextResponse.json(
+        { error: idValidation.error },
+        { status: 400 }
+      );
+    }
 
     await prisma.feedback.delete({
       where: { id },
