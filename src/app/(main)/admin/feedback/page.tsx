@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import {
   Select,
   SelectContent,
@@ -21,7 +21,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
-import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { format, subMonths } from "date-fns";
 import { id } from "date-fns/locale";
 import {
   MessageSquare,
@@ -32,7 +32,6 @@ import {
   Eye,
   EyeOff,
   Mail,
-  CalendarCheck,
   ArrowLeft,
 } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
@@ -79,6 +78,7 @@ export default function AdminFeedbackPage() {
     if (user && user.role === "ADMIN") {
       fetchFeedbacks();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, filter, monthFilter]);
 
   const fetchFeedbacks = async () => {

@@ -116,7 +116,7 @@ export function validateDateRange(
     }
 
     return { isValid: true, start, end };
-  } catch (error) {
+  } catch {
     return { isValid: false, error: "Format tanggal tidak valid" };
   }
 }
@@ -280,7 +280,7 @@ export function sanitizeMonthFilter(month: string | null): string | null {
     return null;
   }
 
-  const [year, monthNum] = month.split("-").map(Number);
+  const [year] = month.split("-").map(Number);
   
   // Validate year range (not too far in the past or future)
   const currentYear = new Date().getFullYear();

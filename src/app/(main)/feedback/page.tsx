@@ -29,7 +29,7 @@ export default function FeedbackPage() {
   const handleContentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     // Remove HTML tags, dangerous characters, and excessive symbols
-    let sanitized = value
+    const sanitized = value
       .replace(/<[^>]*>/g, "") // Remove HTML tags
       .replace(/[<>{}[\]\\]/g, "") // Remove brackets and backslash
       .replace(/[*#@$%^&+=|~`]/g, "") // Remove special symbols

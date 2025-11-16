@@ -154,6 +154,7 @@ export function DayCell({ cell, events, eventPositions }: IProps) {
         )}
       </div>
     ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       date,
       day,

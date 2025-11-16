@@ -37,7 +37,7 @@ export function BookingOnboarding({
 		setCurrentStep,
 		setStartDateOpen,
 		setEndDateOpen,
-		canProceedToNextStep,
+		canProceedToNextStep, // eslint-disable-line @typescript-eslint/no-unused-vars
 	} = useBookingForm(defaultValues);
 
 	const handleFinish = () => {

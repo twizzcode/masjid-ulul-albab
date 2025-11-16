@@ -36,8 +36,6 @@ import {
   Eye,
   Archive,
   ListChecks,
-  CalendarCheck,
-  MessageSquare,
   ArrowLeft,
 } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
