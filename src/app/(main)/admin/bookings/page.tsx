@@ -138,7 +138,11 @@ export default function AdminBookingsPage() {
         body: JSON.stringify({ status: "approved" }),
       });
 
-      if (!response.ok) throw new Error("Failed to approve booking");
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: "Unknown error" }));
+        console.error("Approve failed:", errorData);
+        throw new Error(errorData.error || "Failed to approve booking");
+      }
 
       toast.success("Pengajuan disetujui!");
       // Refresh both tabs
@@ -146,7 +150,7 @@ export default function AdminBookingsPage() {
       await fetchBookings("archived");
     } catch (error) {
       console.error("Approve error:", error);
-      toast.error("Gagal menyetujui pengajuan");
+      toast.error(error instanceof Error ? error.message : "Gagal menyetujui pengajuan");
     } finally {
       setProcessingId(null);
     }

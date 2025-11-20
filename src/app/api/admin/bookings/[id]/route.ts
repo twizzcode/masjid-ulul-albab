@@ -72,10 +72,11 @@ export async function PATCH(
     // Require admin access
     const { session } = await requireAdmin();
     
-    const { id } = await params;
+    const resolvedParams = await params;
+    const bookingId = resolvedParams.id;
 
     // Validate ID format
-    const idValidation = validateId(id);
+    const idValidation = validateId(bookingId);
     if (!idValidation.isValid) {
       return NextResponse.json(
         { error: idValidation.error },
@@ -88,12 +89,12 @@ export async function PATCH(
 
     // Sanitize inputs
     const status = rawStatus ? sanitizeString(rawStatus) : null;
-    const rejectionReason = rawRejectionReason ? sanitizeString(rawRejectionReason) : null;
+    const rejectionReason = rawRejectionReason ? sanitizeString(rawRejectionReason) : undefined;
 
     // Validate using Zod schema
     const validation = bookingStatusUpdateSchema.safeParse({
       status,
-      rejectionReason,
+      ...(rejectionReason && { rejectionReason }),
     });
 
     if (!validation.success) {
@@ -104,9 +105,21 @@ export async function PATCH(
       );
     }
 
+    // Check if booking exists first
+    const existingBooking = await prisma.booking.findUnique({
+      where: { id: bookingId },
+    });
+
+    if (!existingBooking) {
+      return NextResponse.json(
+        { error: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
     // Update booking status
     const booking = await prisma.booking.update({
-      where: { id },
+      where: { id: bookingId },
       data: {
         status: validation.data.status,
         rejectionReason: validation.data.status === "rejected" ? validation.data.rejectionReason : null,
