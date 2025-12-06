@@ -37,6 +37,7 @@ import {
   Archive,
   ListChecks,
   ArrowLeft,
+  Trash2,
 } from "lucide-react";
 import { useUser } from "@/hooks/use-user";
 import { useRouter } from "next/navigation";
@@ -77,6 +78,12 @@ export default function AdminBookingsPage() {
   const [showRejectDialog, setShowRejectDialog] = useState(false);
   const [rejectBookingId, setRejectBookingId] = useState<string | null>(null);
   const [rejectionReason, setRejectionReason] = useState("");
+
+  // Delete dialog state
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [deleteBookingId, setDeleteBookingId] = useState<string | null>(null);
+  const [deletingBookingName, setDeletingBookingName] = useState<string>("");
+  const [isDeletingBooking, setIsDeletingBooking] = useState(false);
 
   const router = useRouter();
   const { user, isLoading: userLoading } = useUser();
@@ -193,6 +200,42 @@ export default function AdminBookingsPage() {
     }
   };
 
+  const openDeleteDialog = (bookingId: string, eventName: string) => {
+    setDeleteBookingId(bookingId);
+    setDeletingBookingName(eventName);
+    setShowDeleteDialog(true);
+  };
+
+  const handleDelete = async () => {
+    if (!deleteBookingId) return;
+
+    try {
+      setIsDeletingBooking(true);
+      const response = await fetch(`/api/admin/bookings/${deleteBookingId}`, {
+        method: "DELETE",
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || "Failed to delete booking");
+      }
+
+      toast.success("Pengajuan berhasil dihapus");
+      setShowDeleteDialog(false);
+      setDeleteBookingId(null);
+      setDeletingBookingName("");
+      
+      // Refresh both tabs
+      await fetchBookings("ongoing");
+      await fetchBookings("archived");
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error(error instanceof Error ? error.message : "Gagal menghapus pengajuan");
+    } finally {
+      setIsDeletingBooking(false);
+    }
+  };
+
   const getStatusBadge = (status: Booking["status"]) => {
     const badges = {
       pending: <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300"><Clock className="w-3 h-3 mr-1" /> Pending</Badge>,
@@ -273,11 +316,21 @@ export default function AdminBookingsPage() {
               </Button>
             </div>
           )}
-          <Link href={`/admin/pengajuan/${booking.id}`} className="w-full">
-            <Button variant="outline" size="sm" className="w-full">
-              <Eye className="w-3 h-3 mr-1.5" />Detail
+          <div className="flex gap-2">
+            <Link href={`/admin/pengajuan/${booking.id}`} className="flex-1">
+              <Button variant="outline" size="sm" className="w-full">
+                <Eye className="w-3 h-3 mr-1.5" />Detail
+              </Button>
+            </Link>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => openDeleteDialog(booking.id, booking.eventName)}
+              className="bg-red-50 hover:bg-red-100 border-red-300 text-red-700"
+            >
+              <Trash2 className="w-3 h-3" />
             </Button>
-          </Link>
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -382,6 +435,55 @@ export default function AdminBookingsPage() {
                 <XCircle className="w-4 h-4 mr-2" />
               )}
               Tolak
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-full">
+                <Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <DialogTitle>Hapus Pengajuan</DialogTitle>
+            </div>
+            <DialogDescription className="text-base pt-2">
+              Apakah Anda yakin ingin menghapus pengajuan <span className="font-semibold">{deletingBookingName}</span>? Tindakan ini tidak dapat dibatalkan dan file akan dihapus dari storage.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => {
+                setShowDeleteDialog(false);
+                setDeleteBookingId(null);
+                setDeletingBookingName("");
+              }}
+              disabled={isDeletingBooking}
+              className="w-full sm:w-auto"
+            >
+              Batal
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              disabled={isDeletingBooking}
+              className="w-full sm:w-auto"
+            >
+              {isDeletingBooking ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  Menghapus...
+                </>
+              ) : (
+                <>
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Hapus
+                </>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

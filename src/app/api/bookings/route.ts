@@ -151,7 +151,7 @@ export async function POST(req: NextRequest) {
 				startDate: start,
 				endDate: end,
 				letterUrl: "", // Temporary, will update after upload
-				letterFileName: letterFile.name,
+				letterFileName: "", // Will be updated after upload
 				userId: session.user.id,
 				status: "pending",
 			},
@@ -163,14 +163,15 @@ export async function POST(req: NextRequest) {
 			const uniqueId = nanoid(10);
 			const timestamp = Date.now();
 			// Structure: bookings/{bookingId}/letter-{timestamp}-{random}.pdf
-			const fileName = `bookings/${booking.id}/letter-${timestamp}-${uniqueId}.${fileExtension}`;
+			const fileName = `${booking.id}/letter-${timestamp}-${uniqueId}.${fileExtension}`;
+			const fullKey = `bookings/${fileName}`;
 
 			const arrayBuffer = await letterFile.arrayBuffer();
 			const buffer = Buffer.from(arrayBuffer);
 
 			const uploadCommand = new PutObjectCommand({
 				Bucket: R2_BUCKET_NAME,
-				Key: fileName,
+				Key: fullKey,
 				Body: buffer,
 				ContentType: "application/pdf",
 				ContentDisposition: "inline", // Allow inline viewing instead of forcing download
@@ -185,12 +186,15 @@ export async function POST(req: NextRequest) {
 
 			await r2Client.send(uploadCommand);
 
-			const letterUrl = `${R2_PUBLIC_URL}/${fileName}`;
+			const letterUrl = `${R2_PUBLIC_URL}/${fullKey}`;
 
-			// Update booking with letterUrl
+			// Update booking with letterUrl and fileName
 			const updatedBooking = await prisma.booking.update({
 				where: { id: booking.id },
-				data: { letterUrl },
+				data: { 
+					letterUrl,
+					letterFileName: fileName, // Save only the relative path from bookings/
+				},
 			});
 
 			// Get first admin for WhatsApp notification

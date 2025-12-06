@@ -7,7 +7,7 @@ export async function POST(request: NextRequest) {
     await requireAuth();
 
     const body = await request.json();
-    const { location, startDate, endDate } = body;
+    const { location, startDate, endDate, excludeBookingId } = body;
 
     if (!location || !startDate || !endDate) {
       return NextResponse.json(
@@ -23,12 +23,18 @@ export async function POST(request: NextRequest) {
     // 1. Same location
     // 2. Status is approved or pending (not rejected)
     // 3. Time range overlaps
+    // 4. Not the booking being edited (if excludeBookingId is provided)
     const conflictingBooking = await prisma.booking.findFirst({
       where: {
         location: location,
         status: {
           in: ["approved", "pending"],
         },
+        ...(excludeBookingId && {
+          id: {
+            not: excludeBookingId,
+          },
+        }),
         OR: [
           // Case 1: Existing booking starts during requested time
           {
@@ -73,6 +79,7 @@ export async function POST(request: NextRequest) {
 
     if (conflictingBooking) {
       return NextResponse.json({
+        available: false,
         isAvailable: false,
         message: `${location === "aula-lantai-1" ? "Aula Lantai 1" : "Aula Lantai 2"} sudah dibooking untuk waktu tersebut`,
         conflictingBooking: {
@@ -86,6 +93,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
+      available: true,
       isAvailable: true,
       message: "Jadwal tersedia",
     });

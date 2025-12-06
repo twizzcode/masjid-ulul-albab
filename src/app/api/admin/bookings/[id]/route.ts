@@ -6,6 +6,8 @@ import {
   bookingStatusUpdateSchema,
   sanitizeString,
 } from "@/lib/validation";
+import { DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { r2Client, R2_BUCKET_NAME } from "@/lib/r2";
 
 // GET single booking (admin only)
 export async function GET(
@@ -171,6 +173,34 @@ export async function DELETE(
       );
     }
 
+    // Get booking first to access letterFileName
+    const booking = await prisma.booking.findUnique({
+      where: { id },
+    });
+
+    if (!booking) {
+      return NextResponse.json(
+        { error: "Booking not found" },
+        { status: 404 }
+      );
+    }
+
+    // Delete file from R2 if exists
+    if (booking.letterFileName) {
+      try {
+        const deleteCommand = new DeleteObjectCommand({
+          Bucket: R2_BUCKET_NAME,
+          Key: `bookings/${booking.letterFileName}`,
+        });
+        await r2Client.send(deleteCommand);
+        console.log(`Deleted file from R2: bookings/${booking.letterFileName}`);
+      } catch (error) {
+        console.error("Error deleting file from R2:", error);
+        // Continue with booking deletion even if file deletion fails
+      }
+    }
+
+    // Delete the booking from database
     await prisma.booking.delete({
       where: { id },
     });

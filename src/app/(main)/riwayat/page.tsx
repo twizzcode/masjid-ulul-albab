@@ -27,6 +27,8 @@ import {
 	Eye,
 	History,
 	Hourglass,
+	Pencil,
+	Trash2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -59,6 +61,9 @@ export default function RiwayatPage() {
 	const [isLoadingPast, setIsLoadingPast] = useState(false);
 	const [activeTab, setActiveTab] = useState<"ongoing" | "past">("ongoing");
 	const [isSendingWhatsApp, setIsSendingWhatsApp] = useState<string | null>(null);
+	const [deletingBookingId, setDeletingBookingId] = useState<string | null>(null);
+	const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+	const [bookingToDelete, setBookingToDelete] = useState<Booking | null>(null);
 
 	useEffect(() => {
 		if (!userLoading && !user) {
@@ -119,6 +124,41 @@ export default function RiwayatPage() {
 		}
 	};
 
+	const handleDeleteClick = (booking: Booking) => {
+		setBookingToDelete(booking);
+		setShowDeleteDialog(true);
+	};
+
+	const handleDeleteConfirm = async () => {
+		if (!bookingToDelete) return;
+
+		try {
+			setDeletingBookingId(bookingToDelete.id);
+			const response = await fetch(`/api/bookings/${bookingToDelete.id}`, {
+				method: "DELETE",
+			});
+
+			if (!response.ok) {
+				const data = await response.json();
+				throw new Error(data.error || "Failed to delete booking");
+			}
+
+			toast.success("Peminjaman berhasil dihapus");
+			
+			// Refresh the booking list
+			setOngoingBookings(prev => prev.filter(b => b.id !== bookingToDelete.id));
+			setPastBookings(prev => prev.filter(b => b.id !== bookingToDelete.id));
+			
+			setShowDeleteDialog(false);
+			setBookingToDelete(null);
+		} catch (error) {
+			console.error("Delete booking error:", error);
+			toast.error(error instanceof Error ? error.message : "Gagal menghapus peminjaman");
+		} finally {
+			setDeletingBookingId(null);
+		}
+	};
+
 	const getStatusBadge = (status: Booking["status"]) => {
 		const badges = {
 			pending: <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-300"><AlertCircle className="w-3 h-3 mr-1" />Pending</Badge>,
@@ -173,12 +213,28 @@ export default function RiwayatPage() {
 
 				<div className="flex gap-2 pt-2">
 					{booking.status === "pending" && (
-						<Button variant="outline" size="sm" onClick={() => handleSendWhatsApp(booking)} disabled={isSendingWhatsApp === booking.id} className="flex-1 bg-green-50 hover:bg-green-100 border-green-300">
-							<MessageCircle className="w-3 h-3 mr-1.5" />
-							{isSendingWhatsApp === booking.id ? "Mengirim..." : "Konfirmasi WA"}
-						</Button>
+						<>
+							<Button variant="outline" size="sm" onClick={() => handleSendWhatsApp(booking)} disabled={isSendingWhatsApp === booking.id} className="flex-1 bg-green-50 hover:bg-green-100 border-green-300">
+								<MessageCircle className="w-3 h-3 mr-1.5" />
+								{isSendingWhatsApp === booking.id ? "Mengirim..." : "Konfirmasi WA"}
+							</Button>
+							<Link href={`/riwayat/${booking.id}/edit`}>
+								<Button variant="outline" size="sm" className="bg-blue-50 hover:bg-blue-100 border-blue-300">
+									<Pencil className="w-3 h-3" />
+								</Button>
+							</Link>
+							<Button 
+								variant="outline" 
+								size="sm" 
+								onClick={() => handleDeleteClick(booking)} 
+								disabled={deletingBookingId === booking.id}
+								className="bg-red-50 hover:bg-red-100 border-red-300"
+							>
+								<Trash2 className="w-3 h-3" />
+							</Button>
+						</>
 					)}
-					<Link href={`/riwayat/${booking.id}`} className="flex-1">
+					<Link href={`/riwayat/${booking.id}`} className={booking.status === "pending" ? "" : "flex-1"}>
 						<Button variant="outline" size="sm" className="w-full">
 							<Eye className="w-3 h-3 mr-1.5" />Detail
 						</Button>
@@ -253,6 +309,50 @@ export default function RiwayatPage() {
 						</Button>
 						<Button onClick={() => router.push('/login')} className="w-full sm:w-auto">
 							<LogIn className="w-4 h-4 mr-2" />Login Sekarang
+						</Button>
+					</DialogFooter>
+				</DialogContent>
+			</Dialog>
+
+			<Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+				<DialogContent className="sm:max-w-md">
+					<DialogHeader>
+						<div className="flex items-center gap-2 mb-2">
+							<div className="p-2 bg-red-100 dark:bg-red-900/20 rounded-full">
+								<Trash2 className="h-5 w-5 text-red-600 dark:text-red-400" />
+							</div>
+							<DialogTitle>Hapus Peminjaman</DialogTitle>
+						</div>
+						<DialogDescription className="text-base pt-2">
+							Apakah Anda yakin ingin menghapus peminjaman untuk <span className="font-semibold">{bookingToDelete?.eventName}</span>? Tindakan ini tidak dapat dibatalkan.
+						</DialogDescription>
+					</DialogHeader>
+					<DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+						<Button 
+							variant="outline" 
+							onClick={() => setShowDeleteDialog(false)} 
+							disabled={deletingBookingId !== null}
+							className="w-full sm:w-auto"
+						>
+							Batal
+						</Button>
+						<Button 
+							variant="destructive" 
+							onClick={handleDeleteConfirm}
+							disabled={deletingBookingId !== null}
+							className="w-full sm:w-auto"
+						>
+							{deletingBookingId ? (
+								<>
+									<Loader2 className="w-4 h-4 mr-2 animate-spin" />
+									Menghapus...
+								</>
+							) : (
+								<>
+									<Trash2 className="w-4 h-4 mr-2" />
+									Hapus
+								</>
+							)}
 						</Button>
 					</DialogFooter>
 				</DialogContent>
