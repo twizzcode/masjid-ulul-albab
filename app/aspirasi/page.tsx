@@ -1,7 +1,9 @@
 import type { Metadata } from "next"
+import Image from "next/image"
 import Link from "next/link"
 
 import { AspirationForm } from "@/components/aspiration-form"
+import { Card } from "@/components/ui/card"
 
 export const metadata: Metadata = {
   title: "Kotak Aspirasi — Masjid Jami' Ulul Albab UNNES",
@@ -35,11 +37,19 @@ export default function AspirationPage() {
         </div>
       </section>
 
-      <section
-        id="form-aspirasi"
-        className="mt-6 flex scroll-mt-32 justify-center md:mt-10"
-      >
-        <AspirationForm />
+      <section id="form-aspirasi" className="mt-6 scroll-mt-32 md:mt-10">
+        <Card className="grid gap-0 py-0 lg:grid-cols-2">
+          <div className="relative min-h-72 overflow-hidden lg:min-h-full">
+            <Image
+              src="/hero/masjid-5.jpeg"
+              alt="Jamaah berkumpul di halaman Masjid Jami' Ulul Albab UNNES"
+              fill
+              sizes="(min-width: 1024px) 50vw, 100vw"
+              className="object-cover"
+            />
+          </div>
+          <AspirationForm />
+        </Card>
       </section>
     </div>
   )

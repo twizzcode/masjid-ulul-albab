@@ -10,7 +10,6 @@ import { HugeiconsIcon } from "@hugeicons/react"
 
 import { Button } from "@/components/ui/button"
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -73,7 +72,7 @@ export function AspirationForm() {
   }
 
   return (
-    <Card className="w-full max-w-lg">
+    <div className="flex flex-col gap-(--card-spacing) py-(--card-spacing)">
       <CardHeader>
         <CardTitle>Kotak Aspirasi</CardTitle>
         <CardDescription>
@@ -192,6 +191,6 @@ export function AspirationForm() {
           </Button>
         </form>
       </CardContent>
-    </Card>
+    </div>
   )
 }
