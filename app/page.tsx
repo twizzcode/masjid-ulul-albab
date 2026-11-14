@@ -3,6 +3,7 @@ import {
   IconBrandInstagram,
   IconBrandWhatsapp,
   IconMail,
+  IconMessageCircle,
 } from "@tabler/icons-react"
 
 import { HeroSlideshow } from "@/components/hero-slideshow"
@@ -88,6 +89,13 @@ export default async function Page() {
               >
                 <IconMail className="size-5" />
               </a>
+              <Link
+                href="/aspirasi"
+                className="inline-flex h-9 items-center justify-center gap-2 rounded-md border px-3 text-sm font-medium text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <IconMessageCircle aria-hidden="true" className="size-5" />
+                Saran &amp; Masukan
+              </Link>
             </div>
           </div>
         </div>

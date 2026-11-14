@@ -1,5 +1,13 @@
-import { relations } from "drizzle-orm"
-import { boolean, index, pgTable, text, timestamp } from "drizzle-orm/pg-core"
+import { relations, sql } from "drizzle-orm"
+import {
+  boolean,
+  check,
+  index,
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+} from "drizzle-orm/pg-core"
 
 export const user = pgTable("user", {
   id: text("id").primaryKey(),
@@ -71,6 +79,35 @@ export const verification = pgTable(
       .notNull(),
   },
   (table) => [index("verification_identifier_idx").on(table.identifier)]
+)
+
+
+export const aspiration = pgTable(
+  "aspiration",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    isAnonymous: boolean("is_anonymous").default(true).notNull(),
+    name: text("name"),
+    category: text("category").notNull(),
+    message: text("message").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (table) => [
+    check(
+      "aspiration_category_check",
+      sql`${table.category} in ('saran', 'kritik', 'masukan')`
+    ),
+    check(
+      "aspiration_message_length_check",
+      sql`char_length(${table.message}) between 10 and 2000`
+    ),
+    check(
+      "aspiration_identity_check",
+      sql`(${table.isAnonymous} and ${table.name} is null) or (not ${table.isAnonymous} and coalesce(char_length(trim(${table.name})), 0) between 2 and 100)`
+    ),
+  ]
 )
 
 export const userRelations = relations(user, ({ many }) => ({

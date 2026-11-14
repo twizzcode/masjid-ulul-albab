@@ -12,6 +12,7 @@
     "start": "next start",
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
+    "check:aspirasi": "bun scripts/check-aspiration.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
