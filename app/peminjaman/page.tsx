@@ -2,8 +2,6 @@ import {
   IconArrowRight,
   IconBrandWhatsapp,
   IconCircleCheck,
-  IconBuildingMosque,
-  IconPray,
 } from "@tabler/icons-react"
 import type { Metadata } from "next"
 import Link from "next/link"
@@ -11,8 +9,6 @@ import Link from "next/link"
 import { PeminjamanCalendar } from "@/components/peminjaman-calendar"
 import { PeminjamanForm } from "@/components/peminjaman-form"
 import { Card, CardContent } from "@/components/ui/card"
-import { buttonVariants } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
 
 export const dynamic = "force-dynamic"
 
@@ -27,23 +23,6 @@ const WHATSAPP_URL =
   encodeURIComponent(
     "Assalamu'alaikum, saya ingin mengajukan peminjaman tempat di Masjid Jami' Ulul Albab UNNES.",
   )
-
-const facilities = [
-  {
-    name: "Aula Masjid Lantai 1",
-    capacity: "±300 orang",
-    description:
-      "Ruang utama masjid untuk kajian, seminar, dan acara komunitas dengan sound system dan proyektor.",
-    icon: IconBuildingMosque,
-  },
-  {
-    name: "Ruang Solat Lantai 2",
-    capacity: "±100 orang",
-    description:
-      "Ruang salat lantai dua untuk kajian, pembinaan, dan kegiatan jamaah dengan kapasitas lebih kecil.",
-    icon: IconPray,
-  },
-]
 
 const steps = [
   {
@@ -77,7 +56,7 @@ const requirements = [
 
 export default function PeminjamanPage() {
   return (
-    <div className="container mx-auto w-full max-w-7xl px-6 pt-8 pb-24 md:pt-12">
+    <div className="container mx-auto w-full max-w-7xl px-3 pt-8 pb-24 sm:px-6 md:pt-12">
       {/* Hero peminjaman */}
       <section className="relative isolate overflow-hidden rounded-3xl border bg-muted px-6 py-10 text-center md:px-10 md:py-14">
         <div
@@ -98,15 +77,6 @@ export default function PeminjamanPage() {
           </p>
 
           <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
-            <Link
-              href="#fasilitas"
-              className={cn(
-                buttonVariants({ variant: "outline" }),
-                "h-auto w-full justify-center rounded-md border-neutral-300 px-5 py-2 text-sm transition duration-200 hover:-translate-y-0.5 sm:w-auto dark:border-neutral-700",
-              )}
-            >
-              Lihat fasilitas
-            </Link>
             <Link
               href="#form-peminjaman"
               className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-2 text-sm font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] transition duration-200 hover:-translate-y-0.5 sm:w-auto"
@@ -133,45 +103,6 @@ export default function PeminjamanPage() {
         className="mt-6 scroll-mt-32 md:mt-10"
       >
         <PeminjamanForm anchorIso={new Date().toISOString()} />
-      </section>
-
-      {/* Fasilitas */}
-      <section id="fasilitas" className="mt-16 scroll-mt-32 md:mt-20">
-        <div className="max-w-2xl">
-          <h2 className="text-3xl font-semibold tracking-tight">
-            Fasilitas yang bisa dipinjam
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Pilih ruang yang paling sesuai dengan kebutuhan kegiatanmu.
-          </p>
-        </div>
-
-        <div className="mt-8 grid gap-4 md:grid-cols-2">
-          {facilities.map((facility) => {
-            const Icon = facility.icon
-            return (
-              <div
-                key={facility.name}
-                className="flex flex-col gap-4 rounded-xl border bg-muted/40 p-6"
-              >
-                <span className="inline-flex size-10 items-center justify-center rounded-lg bg-background text-muted-foreground">
-                  <Icon className="size-5" />
-                </span>
-                <div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h3 className="font-medium">{facility.name}</h3>
-                    <span className="rounded-full border bg-background px-2.5 py-0.5 text-xs text-muted-foreground">
-                      {facility.capacity}
-                    </span>
-                  </div>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    {facility.description}
-                  </p>
-                </div>
-              </div>
-            )
-          })}
-        </div>
       </section>
 
       {/* Alur */}

@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
+import { useEffect, useMemo, useRef, type CSSProperties } from "react"
 import {
   EventCalendarViewContext,
   useEventCalendar,
@@ -228,7 +228,7 @@ function EventCalendarResourceView({
       viewConfig.classNames?.timeGrid,
       className
     ),
-    style: { "--ec-hour-height": "2.5rem" } as CSSProperties,
+    style: { "--ec-hour-height": "2rem" } as CSSProperties,
     children: (
       <>
         {/* Resource header row */}

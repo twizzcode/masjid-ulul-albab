@@ -43,7 +43,6 @@ import type {
   EventCalendarDateRange,
   EventCalendarDragState,
   EventCalendarSegment,
-  EventCalendarSlotDraft,
 } from "@/components/reui/event-calendar/event-calendar-types"
 import { mergeProps } from "@base-ui/react/merge-props"
 import { useRender } from "@base-ui/react/use-render"
@@ -273,7 +272,7 @@ function EventCalendarTimeGrid({
       viewConfig.classNames?.timeGrid,
       className
     ),
-    style: { "--ec-hour-height": "2.5rem" } as CSSProperties,
+    style: { "--ec-hour-height": "2rem" } as CSSProperties,
     children: (
       <>
         {/* Day-header row (sticky below the nav in page scroll mode) */}

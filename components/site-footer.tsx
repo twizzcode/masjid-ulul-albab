@@ -41,11 +41,16 @@ const contacts = [
 export function SiteFooter() {
   const pathname = usePathname()
 
-  if (pathname === "/login" || pathname === "/signup") return null
+  if (
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname.startsWith("/admin")
+  )
+    return null
 
   return (
     <footer className="overflow-hidden bg-neutral-950 text-neutral-50">
-      <div className="container mx-auto w-full max-w-7xl px-6 pt-12 md:pt-16">
+      <div className="container mx-auto w-full max-w-7xl px-3 pt-12 sm:px-6 md:pt-16">
         <div className="grid gap-10 border-b border-neutral-800 pb-12 md:grid-cols-2 lg:grid-cols-12 lg:gap-8">
           <div className="flex flex-col gap-5 lg:col-span-5">
             <Link

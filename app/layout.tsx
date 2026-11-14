@@ -3,6 +3,7 @@ import { Geist_Mono, Inter } from "next/font/google"
 import "./globals.css"
 import NavbarDemo from "@/components/resizable-navbar-demo"
 import { SiteFooter } from "@/components/site-footer"
+import { SiteMain } from "@/components/site-main"
 import { ThemeProvider } from "@/components/theme-provider"
 import { cn } from "@/lib/utils"
 
@@ -32,7 +33,7 @@ export default function RootLayout({
       <body className="flex min-h-svh flex-col">
         <ThemeProvider>
           <NavbarDemo />
-          <main className="flex-1">{children}</main>
+          <SiteMain>{children}</SiteMain>
           <SiteFooter />
         </ThemeProvider>
       </body>

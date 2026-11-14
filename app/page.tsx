@@ -22,7 +22,7 @@ export default async function Page() {
   ]
 
   return (
-    <div className="container mx-auto w-full max-w-7xl px-6 pt-10 pb-24 md:pt-12 lg:pt-14 xl:pt-24">
+    <div className="container mx-auto w-full max-w-7xl px-3 pt-10 pb-24 sm:px-6 md:pt-12 lg:pt-14 xl:pt-24">
       {/* Hero */}
       <section
         id="beranda"

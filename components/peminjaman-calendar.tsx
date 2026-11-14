@@ -11,13 +11,30 @@ import {
   IconPhone,
   IconUser,
 } from "@tabler/icons-react"
-import { addDays, addMinutes, format, setHours, startOfDay, startOfWeek } from "date-fns"
+import {
+  addDays,
+  addMinutes,
+  format,
+  isSameMonth,
+  isSameYear,
+  setHours,
+  startOfDay,
+  startOfWeek,
+  subMilliseconds,
+} from "date-fns"
 import { id as localeId } from "date-fns/locale"
 
 import type { EventCalendarI18nOverrides } from "@/components/reui/event-calendar/event-calendar-i18n"
 import { EventCalendar } from "@/components/reui/event-calendar/event-calendar"
 import { EventCalendarContent } from "@/components/reui/event-calendar/event-calendar-content"
-import { EventCalendarNav } from "@/components/reui/event-calendar/event-calendar-nav"
+import {
+  EventCalendarDatePicker,
+  EventCalendarNav,
+  EventCalendarNavNext,
+  EventCalendarNavPrev,
+  EventCalendarNavToday,
+  EventCalendarTitle,
+} from "@/components/reui/event-calendar/event-calendar-nav"
 import { EventCalendarResourceView } from "@/components/reui/event-calendar/event-calendar-resource-view"
 import {
   EventCalendarDaysView,
@@ -177,6 +194,25 @@ const I18N: EventCalendarI18nOverrides = {
     timeGutterMinute: "HH:mm",
     eventTime: "HH:mm",
   },
+  functions: {
+    formatTitle: (view, { date, activeRange, locale }) => {
+      const options = { locale }
+      if (view === "month") return format(date, "MMMM yyyy", options)
+      if (view === "day" || view === "resource") {
+        return format(date, "d MMMM yyyy", options)
+      }
+
+      const start = activeRange.start
+      const end = subMilliseconds(activeRange.end, 1)
+      if (isSameMonth(start, end)) {
+        return `${format(start, "d", options)}–${format(end, "d MMMM yyyy", options)}`
+      }
+      if (isSameYear(start, end)) {
+        return `${format(start, "d MMMM", options)}–${format(end, "d MMMM yyyy", options)}`
+      }
+      return `${format(start, "d MMMM yyyy", options)}–${format(end, "d MMMM yyyy", options)}`
+    },
+  },
 }
 
 function buildBookings(anchor: Date): CalendarEvent<BookingDetails>[] {
@@ -282,26 +318,52 @@ export function PeminjamanCalendar({ anchorIso }: { anchorIso: string }) {
       components={CALENDAR_VIEWS}
       className="relative isolate z-0 w-full"
     >
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2 sm:flex-nowrap">
+      <div className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:px-4">
         <EventCalendarNav
           showViewSwitcher={false}
-          className="min-w-0 flex-1 px-0"
-        />
+          className="w-full min-w-0 px-0 sm:flex-1"
+        >
+          <div className="flex w-full items-center gap-2">
+            <EventCalendarNavToday
+              tooltip={null}
+              className="h-9 shrink-0 border border-border bg-background px-3 hover:bg-muted"
+            />
+            <div className="flex min-w-0 flex-1 items-center gap-1">
+              <EventCalendarNavPrev
+                tooltip={null}
+                className="size-9! shrink-0 border border-border bg-background hover:bg-muted"
+              />
+              <EventCalendarDatePicker
+                tooltip={null}
+                className="h-9! w-full! min-w-0 flex-1 border border-border bg-background px-2 hover:bg-muted md:w-64! md:flex-none"
+              >
+                <EventCalendarTitle
+                  render={<span />}
+                  className="m-0 w-full text-center"
+                />
+              </EventCalendarDatePicker>
+              <EventCalendarNavNext
+                tooltip={null}
+                className="size-9! shrink-0 border border-border bg-background hover:bg-muted"
+              />
+            </div>
+          </div>
+        </EventCalendarNav>
         <Tabs
           value={tab}
           onValueChange={(value) => value && setTab(value as CalendarTab)}
-          className="ml-auto w-auto"
+          className="w-full sm:ml-auto sm:w-auto"
         >
-          <TabsList>
-            <TabsTrigger value="month">
+          <TabsList className="w-full sm:w-fit">
+            <TabsTrigger value="month" className="flex-1 sm:flex-none">
               <IconCalendarMonth aria-hidden data-icon="inline-start" />
               Bulan
             </TabsTrigger>
-            <TabsTrigger value="week">
+            <TabsTrigger value="week" className="flex-1 sm:flex-none">
               <IconCalendarWeek aria-hidden data-icon="inline-start" />
               Minggu
             </TabsTrigger>
-            <TabsTrigger value="agenda">
+            <TabsTrigger value="agenda" className="flex-1 sm:flex-none">
               <IconListDetails aria-hidden data-icon="inline-start" />
               Agenda
             </TabsTrigger>

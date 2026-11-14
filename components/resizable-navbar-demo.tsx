@@ -37,7 +37,12 @@ export default function NavbarDemo() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
 
-  if (pathname === "/login" || pathname === "/signup") return null
+  if (
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname.startsWith("/admin")
+  )
+    return null
 
   return (
     <Navbar>
