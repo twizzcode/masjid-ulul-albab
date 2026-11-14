@@ -15,6 +15,13 @@
       "when": 1794643479290,
       "tag": "0001_add-aspiration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1794644820083,
+      "tag": "0002_remove-aspiration-category",
+      "breakpoints": true
     }
   ]
 }

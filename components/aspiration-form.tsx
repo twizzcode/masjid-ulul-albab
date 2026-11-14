@@ -24,27 +24,13 @@ import {
   FieldLabel,
 } from "@/components/ui/field"
 import { Input } from "@/components/ui/input"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { Textarea } from "@/components/ui/textarea"
-
-const categoryItems = {
-  saran: "Saran",
-  kritik: "Kritik",
-  masukan: "Masukan",
-}
 
 type SubmitState = "idle" | "submitting" | "success" | "error"
 
 export function AspirationForm() {
   const [anonymous, setAnonymous] = useState(true)
-  const [category, setCategory] = useState<keyof typeof categoryItems>("saran")
   const [messageLength, setMessageLength] = useState(0)
   const [submitState, setSubmitState] = useState<SubmitState>("idle")
   const [errorMessage, setErrorMessage] = useState("")
@@ -63,7 +49,6 @@ export function AspirationForm() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           anonymous,
-          category,
           message: data.get("message"),
           name: data.get("name"),
           website: data.get("website"),
@@ -77,7 +62,6 @@ export function AspirationForm() {
 
       form.reset()
       setAnonymous(true)
-      setCategory("saran")
       setMessageLength(0)
       setSubmitState("success")
     } catch (error) {
@@ -130,28 +114,6 @@ export function AspirationForm() {
                 />
               </Field>
             )}
-
-            <Field>
-              <FieldLabel htmlFor="category">Jenis aspirasi</FieldLabel>
-              <Select
-                items={categoryItems}
-                value={category}
-                onValueChange={(value) =>
-                  setCategory(value as keyof typeof categoryItems)
-                }
-              >
-                <SelectTrigger id="category" className="w-full">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent alignItemWithTrigger={false}>
-                  {Object.entries(categoryItems).map(([value, label]) => (
-                    <SelectItem key={value} value={value}>
-                      {label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Field>
 
             <Field>
               <div className="flex items-center justify-between gap-2">
@@ -214,6 +176,7 @@ export function AspirationForm() {
             size="lg"
             disabled={submitState === "submitting"}
             aria-live="polite"
+            className="bg-gradient-to-b from-blue-500 to-blue-700 font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] hover:from-blue-500 hover:to-blue-800"
           >
             <HugeiconsIcon
               icon={submitState === "submitting" ? Loading03Icon : SentIcon}

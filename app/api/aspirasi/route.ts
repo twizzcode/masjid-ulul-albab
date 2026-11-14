@@ -1,10 +1,7 @@
 import { aspiration } from "@/lib/db/schema"
 
-const categories = new Set(["saran", "kritik", "masukan"])
-
 type AspirationPayload = {
   anonymous?: unknown
-  category?: unknown
   message?: unknown
   name?: unknown
   website?: unknown
@@ -46,17 +43,9 @@ export async function POST(request: Request) {
   }
 
   const anonymous = payload.anonymous === true
-  const category = typeof payload.category === "string" ? payload.category : ""
   const message =
     typeof payload.message === "string" ? payload.message.trim() : ""
   const name = typeof payload.name === "string" ? payload.name.trim() : ""
-
-  if (!categories.has(category)) {
-    return Response.json(
-      { message: "Pilih jenis aspirasi yang valid." },
-      { status: 400 }
-    )
-  }
 
   if (message.length < 10 || message.length > 2000) {
     return Response.json(
@@ -78,7 +67,6 @@ export async function POST(request: Request) {
     await db.insert(aspiration).values({
       isAnonymous: anonymous,
       name: anonymous ? null : name,
-      category,
       message,
     })
 

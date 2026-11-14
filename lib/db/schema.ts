@@ -88,17 +88,12 @@ export const aspiration = pgTable(
     id: uuid("id").defaultRandom().primaryKey(),
     isAnonymous: boolean("is_anonymous").default(true).notNull(),
     name: text("name"),
-    category: text("category").notNull(),
     message: text("message").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .defaultNow()
       .notNull(),
   },
   (table) => [
-    check(
-      "aspiration_category_check",
-      sql`${table.category} in ('saran', 'kritik', 'masukan')`
-    ),
     check(
       "aspiration_message_length_check",
       sql`char_length(${table.message}) between 10 and 2000`

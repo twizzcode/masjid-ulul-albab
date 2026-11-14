@@ -15,7 +15,6 @@ const shortMessage = await POST(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       anonymous: true,
-      category: "saran",
       message: "pendek",
     }),
   })
