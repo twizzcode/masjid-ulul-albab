@@ -11,7 +11,6 @@ import {
   InformationCircleIcon,
   Logout01Icon,
   MoneyReceive01Icon,
-  Settings02Icon,
   TaskDone01Icon,
   UserCircleIcon,
   UserMultiple02Icon,
@@ -83,8 +82,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Aspirasi", icon: Comment01Icon, href: "/admin/aspirasi" },
   { label: "Jadwal", icon: Calendar04Icon },
   { label: "Keuangan", icon: MoneyReceive01Icon },
-  { label: "Pengguna", icon: UserMultiple02Icon },
-  { label: "Pengaturan", icon: Settings02Icon },
+  { label: "Pengguna", icon: UserMultiple02Icon, href: "/admin/pengguna" },
 ]
 
 const WAITING_BOOKINGS = ADMIN_BOOKINGS.filter(
