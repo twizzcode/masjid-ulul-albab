@@ -34,6 +34,7 @@ import {
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
@@ -173,15 +174,17 @@ function SidebarUserMenu() {
           </span>
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="end" className="w-64">
-          <DropdownMenuLabel className="flex items-center gap-2 py-2">
-            <UserAvatar user={user} size="sm" />
-            <span className="min-w-0">
-              <span className="block truncate text-sm text-foreground">
-                {user.name}
+          <DropdownMenuGroup>
+            <DropdownMenuLabel className="flex items-center gap-2 py-2">
+              <UserAvatar user={user} size="sm" />
+              <span className="min-w-0">
+                <span className="block truncate text-sm text-foreground">
+                  {user.name}
+                </span>
+                <span className="block truncate font-normal">{user.email}</span>
               </span>
-              <span className="block truncate font-normal">{user.email}</span>
-            </span>
-          </DropdownMenuLabel>
+            </DropdownMenuLabel>
+          </DropdownMenuGroup>
           <DropdownMenuSeparator />
           <DropdownMenuItem onClick={() => setShowAccount(true)}>
             <HugeiconsIcon icon={UserCircleIcon} strokeWidth={2} />
