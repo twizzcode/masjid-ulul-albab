@@ -6,16 +6,18 @@ import {
   Calendar04Icon,
   Comment01Icon,
   DashboardSquare02Icon,
+  Logout01Icon,
   MoneyReceive01Icon,
-  Mosque01Icon,
   Settings02Icon,
   TaskDone01Icon,
   UserMultiple02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import Image from "next/image"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -24,6 +26,14 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import {
   Sidebar,
@@ -43,6 +53,7 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { authClient } from "@/lib/auth-client"
 import { ADMIN_BOOKINGS } from "@/lib/admin-booking-data"
 
 type NavItem = {
@@ -65,6 +76,105 @@ const WAITING_BOOKINGS = ADMIN_BOOKINGS.filter(
   (booking) => booking.status === "Menunggu"
 ).length
 
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase()
+}
+
+function SidebarUserMenu() {
+  const router = useRouter()
+  const { data: session, isPending } = authClient.useSession()
+
+  if (isPending) {
+    return (
+      <div className="flex h-12 items-center gap-2 overflow-hidden rounded-md p-2 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0">
+        <span className="size-8 shrink-0 animate-pulse rounded-full bg-muted" />
+        <span className="min-w-0 flex-1 space-y-1.5 group-data-[collapsible=icon]:hidden">
+          <span className="block h-3 w-24 animate-pulse rounded bg-muted" />
+          <span className="block h-3 w-32 animate-pulse rounded bg-muted" />
+        </span>
+      </div>
+    )
+  }
+
+  if (!session) return null
+
+  const { user } = session
+
+  async function handleSignOut() {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          router.push("/login")
+          router.refresh()
+        },
+      },
+    })
+  }
+
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label={`Buka menu akun ${user.name}`}
+        className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left transition-colors outline-none group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+      >
+        <Avatar>
+          {user.image && (
+            <AvatarImage
+              src={user.image}
+              alt=""
+              keepMounted
+              referrerPolicy="no-referrer"
+              className="data-[error]:invisible data-[loading]:invisible"
+            />
+          )}
+          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+        </Avatar>
+        <span className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
+          <span className="block truncate text-sm font-medium">
+            {user.name}
+          </span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {user.email}
+          </span>
+        </span>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="right" align="end" className="w-64">
+        <DropdownMenuLabel className="flex items-center gap-2 py-2">
+          <Avatar size="sm">
+            {user.image && (
+              <AvatarImage
+                src={user.image}
+                alt=""
+                keepMounted
+                referrerPolicy="no-referrer"
+                className="data-[error]:invisible data-[loading]:invisible"
+              />
+            )}
+            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+          </Avatar>
+          <span className="min-w-0">
+            <span className="block truncate text-sm text-foreground">
+              {user.name}
+            </span>
+            <span className="block truncate font-normal">{user.email}</span>
+          </span>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+          <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+          Keluar
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
+  )
+}
+
 function AdminSidebar() {
   const pathname = usePathname()
 
@@ -78,9 +188,13 @@ function AdminSidebar() {
               tooltip="Masjid Jami' Ulul Albab"
               render={<Link href="/admin" />}
             >
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                <HugeiconsIcon icon={Mosque01Icon} strokeWidth={2} />
-              </span>
+              <Image
+                src="/favicon.ico"
+                alt=""
+                width={32}
+                height={32}
+                className="size-8 shrink-0 rounded-lg"
+              />
               <span className="min-w-0 leading-tight">
                 <span className="block truncate font-semibold">Ulul Albab</span>
                 <span className="block truncate text-xs text-muted-foreground">
@@ -139,17 +253,7 @@ function AdminSidebar() {
         <SidebarSeparator className="mx-0" />
         <SidebarMenu>
           <SidebarMenuItem>
-            <div className="flex h-12 items-center gap-2 overflow-hidden rounded-md p-2 group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:p-0">
-              <span className="flex size-8 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">
-                AD
-              </span>
-              <span className="min-w-0 leading-tight">
-                <span className="block truncate font-medium">Administrator</span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  admin@ululalbab.id
-                </span>
-              </span>
-            </div>
+            <SidebarUserMenu />
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
@@ -180,7 +284,9 @@ function AdminBreadcrumb({
     <Breadcrumb>
       <BreadcrumbList>
         <BreadcrumbItem className="hidden sm:inline-flex">
-          <BreadcrumbLink render={<Link href="/admin" />}>Dashboard</BreadcrumbLink>
+          <BreadcrumbLink render={<Link href="/admin" />}>
+            Dashboard
+          </BreadcrumbLink>
         </BreadcrumbItem>
         <BreadcrumbSeparator className="hidden sm:inline-flex" />
         {parent && (
