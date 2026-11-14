@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useCallback, useMemo, useState, type FormEvent } from "react"
 import {
   Loading03Icon,
   PlusSignIcon,
@@ -8,16 +8,33 @@ import {
   UserAdd01Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
+import {
+  type ColumnDef,
+  type PaginationState,
+  type SortingState,
+  useTable,
+} from "@tanstack/react-table"
 import { useRouter } from "next/navigation"
 
 import { AdminShell } from "@/components/admin-shell"
 import { Badge } from "@/components/reui/badge"
+import {
+  DataGrid,
+  DataGridContainer,
+  dataGridFeatures,
+  type DataGridFeatures,
+} from "@/components/reui/data-grid/data-grid"
+import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
+import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination"
+import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll-area"
+import { DataGridTable } from "@/components/reui/data-grid/data-grid-table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -43,14 +60,7 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { Skeleton } from "@/components/ui/skeleton"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table"
+import { useIsMobile } from "@/hooks/use-mobile"
 import type { AdminUser, SearchUser } from "@/lib/admin-users"
 
 type SearchState = "idle" | "loading" | "done" | "error"
@@ -90,8 +100,42 @@ function UserCell({ user }: { user: AdminUser }) {
   )
 }
 
+function ResultAction({
+  item,
+  promoting,
+  onPromote,
+}: {
+  item: SearchUser
+  promoting: boolean
+  onPromote: (id: string) => void
+}) {
+  if (item.isAdmin) {
+    return <Badge variant="success-light">Admin</Badge>
+  }
+
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      disabled={promoting}
+      onClick={() => onPromote(item.id)}
+      aria-label={`Jadikan ${item.email} admin`}
+    >
+      <HugeiconsIcon
+        icon={promoting ? Loading03Icon : UserAdd01Icon}
+        strokeWidth={2}
+        className={
+          promoting ? "animate-spin motion-reduce:animate-pulse" : undefined
+        }
+      />
+      Jadikan admin
+    </Button>
+  )
+}
+
 export function AdminUsers({ admins }: { admins: AdminUser[] }) {
   const router = useRouter()
+  const isMobile = useIsMobile()
   const [dialogOpen, setDialogOpen] = useState(false)
   const [email, setEmail] = useState("")
   const [searchState, setSearchState] = useState<SearchState>("idle")
@@ -99,6 +143,16 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
   const [errorMessage, setErrorMessage] = useState("")
   const [actionError, setActionError] = useState("")
   const [promotingId, setPromotingId] = useState<string | null>(null)
+  const [adminPagination, setAdminPagination] = useState<PaginationState>({
+    pageIndex: 0,
+    pageSize: 10,
+  })
+  const [adminSorting, setAdminSorting] = useState<SortingState>([
+    { id: "name", desc: false },
+  ])
+
+  const adminRowsPerPage = isMobile ? Math.max(admins.length, 1) : 10
+  const adminPageIndex = isMobile ? 0 : adminPagination.pageIndex
 
   function handleDialogChange(open: boolean) {
     setDialogOpen(open)
@@ -150,43 +204,230 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
     }
   }
 
-  async function handlePromote(id: string) {
-    setPromotingId(id)
-    setActionError("")
+  const handlePromote = useCallback(
+    async (id: string) => {
+      setPromotingId(id)
+      setActionError("")
 
-    try {
-      const response = await fetch(
-        `/api/admin/users/${encodeURIComponent(id)}`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ role: "ADMIN" }),
-        }
-      )
-      const result = (await response.json()) as {
-        message?: string
-        user?: AdminUser
-      }
-
-      if (!response.ok) {
-        throw new Error(result.message || "Pengguna gagal dijadikan admin.")
-      }
-
-      setResults((current) =>
-        current.map((item) =>
-          item.id === id ? { ...item, isAdmin: true } : item
+      try {
+        const response = await fetch(
+          `/api/admin/users/${encodeURIComponent(id)}`,
+          {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ role: "ADMIN" }),
+          }
         )
-      )
-      router.refresh()
-    } catch (error) {
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "Pengguna gagal dijadikan admin."
-      )
-    } finally {
-      setPromotingId(null)
+        const result = (await response.json()) as {
+          message?: string
+          user?: AdminUser
+        }
+
+        if (!response.ok) {
+          throw new Error(result.message || "Pengguna gagal dijadikan admin.")
+        }
+
+        setResults((current) =>
+          current.map((item) =>
+            item.id === id ? { ...item, isAdmin: true } : item
+          )
+        )
+        router.refresh()
+      } catch (error) {
+        setActionError(
+          error instanceof Error
+            ? error.message
+            : "Pengguna gagal dijadikan admin."
+        )
+      } finally {
+        setPromotingId(null)
+      }
+    },
+    [router]
+  )
+
+  const adminColumns = useMemo<ColumnDef<DataGridFeatures, AdminUser>[]>(() => {
+    if (isMobile) {
+      return [
+        {
+          id: "name",
+          accessorKey: "name",
+          header: "Admin",
+          cell: ({ row }) => (
+            <div className="space-y-2 py-1">
+              <UserCell user={row.original} />
+              <p className="text-xs text-muted-foreground">
+                Terdaftar {row.original.createdAt}
+              </p>
+            </div>
+          ),
+          size: 280,
+          meta: { cellClassName: "whitespace-normal" },
+          enableResizing: false,
+        },
+      ]
     }
+
+    return [
+      {
+        accessorKey: "name",
+        id: "name",
+        header: ({ column }) => (
+          <DataGridColumnHeader title="Pengguna" column={column} />
+        ),
+        cell: ({ row }) => <UserCell user={row.original} />,
+        size: 280,
+        meta: { fillWidth: true },
+      },
+      {
+        accessorKey: "email",
+        id: "email",
+        header: ({ column }) => (
+          <DataGridColumnHeader title="Email" column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="block max-w-72 truncate">{row.original.email}</span>
+        ),
+        size: 280,
+      },
+      {
+        accessorKey: "createdAtIso",
+        id: "createdAtIso",
+        header: ({ column }) => (
+          <DataGridColumnHeader title="Terdaftar" column={column} />
+        ),
+        cell: ({ row }) => row.original.createdAt,
+        sortingFn: "datetime",
+        size: 190,
+      },
+    ]
+  }, [isMobile])
+
+  const resultColumns = useMemo<
+    ColumnDef<DataGridFeatures, SearchUser>[]
+  >(() => {
+    if (isMobile) {
+      return [
+        {
+          id: "name",
+          accessorKey: "name",
+          header: "Pengguna",
+          cell: ({ row }) => (
+            <div className="space-y-3 py-1">
+              <UserCell user={row.original} />
+              <ResultAction
+                item={row.original}
+                promoting={promotingId === row.original.id}
+                onPromote={handlePromote}
+              />
+            </div>
+          ),
+          size: 280,
+          meta: { cellClassName: "whitespace-normal" },
+          enableResizing: false,
+        },
+      ]
+    }
+
+    return [
+      {
+        accessorKey: "name",
+        id: "name",
+        header: ({ column }) => (
+          <DataGridColumnHeader title="Pengguna" column={column} />
+        ),
+        cell: ({ row }) => <UserCell user={row.original} />,
+        size: 280,
+        meta: { fillWidth: true },
+      },
+      {
+        accessorKey: "email",
+        id: "email",
+        header: ({ column }) => (
+          <DataGridColumnHeader title="Email" column={column} />
+        ),
+        cell: ({ row }) => (
+          <span className="block max-w-64 truncate">{row.original.email}</span>
+        ),
+        size: 240,
+      },
+      {
+        id: "actions",
+        header: "",
+        cell: ({ row }) => (
+          <div className="flex justify-end">
+            <ResultAction
+              item={row.original}
+              promoting={promotingId === row.original.id}
+              onPromote={handlePromote}
+            />
+          </div>
+        ),
+        size: 150,
+        enableSorting: false,
+        enableResizing: false,
+      },
+    ]
+  }, [handlePromote, isMobile, promotingId])
+
+  const adminTable = useTable({
+    features: dataGridFeatures,
+    columns: adminColumns,
+    data: admins,
+    pageCount: Math.ceil(admins.length / adminRowsPerPage),
+    getRowId: (row: AdminUser) => row.id,
+    state: {
+      pagination: {
+        pageIndex: adminPageIndex,
+        pageSize: adminRowsPerPage,
+      },
+      sorting: adminSorting,
+    },
+    onPaginationChange: (updater) =>
+      setAdminPagination((current) => {
+        const next =
+          typeof updater === "function"
+            ? updater({ ...current, pageSize: adminRowsPerPage })
+            : updater
+        return { pageIndex: next.pageIndex, pageSize: adminRowsPerPage }
+      }),
+    onSortingChange: setAdminSorting,
+    autoResetPageIndex: true,
+  })
+
+  const resultTable = useTable({
+    features: dataGridFeatures,
+    columns: resultColumns,
+    data: results,
+    pageCount: 1,
+    getRowId: (row: SearchUser) => row.id,
+    state: {
+      pagination: {
+        pageIndex: 0,
+        pageSize: Math.max(results.length, 1),
+      },
+    },
+  })
+
+  const gridI18n = {
+    labels: {
+      sortAscending: "Urutkan naik",
+      sortDescending: "Urutkan turun",
+      empty: "Tidak ada data",
+      rowsPerPage: "Baris per halaman",
+      paginationInfo: ({
+        from,
+        to,
+        count,
+      }: {
+        from: number
+        to: number
+        count: number
+      }) => `${from}–${to} dari ${count}`,
+      previousPage: "Halaman sebelumnya",
+      nextPage: "Halaman berikutnya",
+      goToPage: (page: number) => `Ke halaman ${page}`,
+    },
   }
 
   return (
@@ -207,54 +448,50 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
           </Button>
         </div>
 
-        <Card className="min-w-0 gap-0 py-0">
-          <CardHeader className="border-b">
-            <CardTitle>Admin</CardTitle>
-            <CardDescription>
-              {admins.length} akun memiliki akses admin.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            {admins.length === 0 ? (
-              <Empty className="border-0">
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <HugeiconsIcon icon={UserAdd01Icon} strokeWidth={2} />
-                  </EmptyMedia>
-                  <EmptyTitle>Belum ada admin</EmptyTitle>
-                  <EmptyDescription>
-                    Tambahkan admin lewat pencarian email.
-                  </EmptyDescription>
-                </EmptyHeader>
-              </Empty>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="pl-4">Pengguna</TableHead>
-                    <TableHead>Terdaftar</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {admins.map((admin) => (
-                    <TableRow key={admin.id}>
-                      <TableCell className="pl-4">
-                        <UserCell user={admin} />
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {admin.createdAt}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+        <DataGrid
+          table={adminTable}
+          recordCount={admins.length}
+          emptyMessage="Belum ada admin."
+          i18n={gridI18n}
+          tableLayout={{
+            dense: true,
+            headerBackground: true,
+            columnsResizable: !isMobile,
+          }}
+          tableClassNames={{
+            base: isMobile ? "w-full min-w-0 table-fixed" : "min-w-[760px]",
+          }}
+        >
+          <Card className="min-w-0 gap-0 py-0">
+            <CardHeader className="border-b px-3 py-3 sm:px-4">
+              <CardTitle>Admin</CardTitle>
+              <CardDescription>
+                {admins.length} akun memiliki akses admin.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              <DataGridContainer>
+                <DataGridScrollArea
+                  orientation={isMobile ? "vertical" : "both"}
+                >
+                  <DataGridTable />
+                </DataGridScrollArea>
+              </DataGridContainer>
+            </CardContent>
+            {!isMobile && admins.length > 0 && (
+              <CardFooter className="border-t bg-transparent px-3 py-2 sm:px-4">
+                <DataGridPagination
+                  sizes={[10]}
+                  className="[&>div:first-child]:hidden"
+                />
+              </CardFooter>
             )}
-          </CardContent>
-        </Card>
+          </Card>
+        </DataGrid>
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={handleDialogChange}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Tambah admin</DialogTitle>
             <DialogDescription>
@@ -288,7 +525,7 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
             </Button>
           </form>
 
-          <div aria-live="polite" className="min-h-24">
+          <div aria-live="polite" className="min-h-28">
             {searchState === "loading" && (
               <div className="flex flex-col gap-2">
                 {Array.from({ length: 3 }, (_, index) => (
@@ -318,51 +555,33 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
             )}
 
             {searchState === "done" && results.length > 0 && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="pl-0">Pengguna</TableHead>
-                    <TableHead className="pr-0 text-right">Aksi</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {results.map((item) => (
-                    <TableRow key={item.id}>
-                      <TableCell className="pl-0">
-                        <UserCell user={item} />
-                      </TableCell>
-                      <TableCell className="pr-0 text-right">
-                        {item.isAdmin ? (
-                          <Badge variant="success-light">Admin</Badge>
-                        ) : (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={promotingId === item.id}
-                            onClick={() => handlePromote(item.id)}
-                            aria-label={`Jadikan ${item.email} admin`}
-                          >
-                            <HugeiconsIcon
-                              icon={
-                                promotingId === item.id
-                                  ? Loading03Icon
-                                  : UserAdd01Icon
-                              }
-                              strokeWidth={2}
-                              className={
-                                promotingId === item.id
-                                  ? "animate-spin motion-reduce:animate-pulse"
-                                  : undefined
-                              }
-                            />
-                            Jadikan admin
-                          </Button>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <DataGrid
+                table={resultTable}
+                recordCount={results.length}
+                i18n={gridI18n}
+                tableLayout={{
+                  dense: true,
+                  headerBackground: true,
+                  columnsResizable: false,
+                }}
+                tableClassNames={{
+                  base: isMobile
+                    ? "w-full min-w-0 table-fixed"
+                    : "min-w-[640px]",
+                }}
+              >
+                <Card className="min-w-0 gap-0 py-0">
+                  <CardContent className="p-0">
+                    <DataGridContainer>
+                      <DataGridScrollArea
+                        orientation={isMobile ? "vertical" : "both"}
+                      >
+                        <DataGridTable />
+                      </DataGridScrollArea>
+                    </DataGridContainer>
+                  </CardContent>
+                </Card>
+              </DataGrid>
             )}
           </div>
 

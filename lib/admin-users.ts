@@ -9,6 +9,7 @@ export type AdminUser = {
   email: string
   image: string | null
   createdAt: string
+  createdAtIso: string
 }
 
 export type SearchUser = AdminUser & {
@@ -27,6 +28,7 @@ function mapUser(record: typeof user.$inferSelect): AdminUser {
     email: record.email,
     image: record.image,
     createdAt: dateFormatter.format(record.createdAt),
+    createdAtIso: record.createdAt.toISOString(),
   }
 }
 
