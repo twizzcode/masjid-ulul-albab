@@ -381,7 +381,19 @@ export function AdminShell({
 }) {
   return (
     <TooltipProvider>
-      <SidebarProvider className="min-h-svh w-full">
+      <style>{`
+        body:has([data-admin-shell]) [data-slot="button"][data-variant="default"] {
+          background-image: linear-gradient(to bottom, var(--color-blue-500), var(--color-blue-700));
+          color: white;
+          font-weight: 700;
+          box-shadow: 0 2px 0 0 rgb(255 255 255 / 30%) inset;
+        }
+
+        body:has([data-admin-shell]) [data-slot="button"][data-variant="default"]:hover {
+          background-image: linear-gradient(to bottom, var(--color-blue-500), var(--color-blue-800));
+        }
+      `}</style>
+      <SidebarProvider data-admin-shell className="min-h-svh w-full">
         <AdminSidebar />
         <SidebarInset>
           <header className="flex h-14 shrink-0 items-center gap-3 border-b px-3 sm:px-5">
