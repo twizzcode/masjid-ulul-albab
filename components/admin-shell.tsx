@@ -4,6 +4,7 @@ import type { ReactNode } from "react"
 import type { IconSvgElement } from "@hugeicons/react"
 import {
   Calendar04Icon,
+  Comment01Icon,
   DashboardSquare02Icon,
   MoneyReceive01Icon,
   Mosque01Icon,
@@ -53,6 +54,7 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", icon: DashboardSquare02Icon, href: "/admin" },
   { label: "Peminjaman", icon: TaskDone01Icon, href: "/admin/peminjaman" },
+  { label: "Aspirasi", icon: Comment01Icon, href: "/admin/aspirasi" },
   { label: "Jadwal", icon: Calendar04Icon },
   { label: "Keuangan", icon: MoneyReceive01Icon },
   { label: "Pengguna", icon: UserMultiple02Icon },
