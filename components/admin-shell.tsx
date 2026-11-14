@@ -1,15 +1,19 @@
 "use client"
 
+import { useState } from "react"
 import type { ReactNode } from "react"
 import type { IconSvgElement } from "@hugeicons/react"
 import {
   Calendar04Icon,
   Comment01Icon,
   DashboardSquare02Icon,
+  Home01Icon,
+  InformationCircleIcon,
   Logout01Icon,
   MoneyReceive01Icon,
   Settings02Icon,
   TaskDone01Icon,
+  UserCircleIcon,
   UserMultiple02Icon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -18,6 +22,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -34,6 +39,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Separator } from "@/components/ui/separator"
 import {
   Sidebar,
@@ -86,9 +100,33 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
+function UserAvatar({
+  user,
+  size,
+}: {
+  user: { name: string; image?: string | null }
+  size?: "sm" | "default" | "lg"
+}) {
+  return (
+    <Avatar size={size}>
+      {user.image && (
+        <AvatarImage
+          src={user.image}
+          alt=""
+          keepMounted
+          referrerPolicy="no-referrer"
+          className="data-[error]:invisible data-[loading]:invisible"
+        />
+      )}
+      <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+    </Avatar>
+  )
+}
+
 function SidebarUserMenu() {
   const router = useRouter()
   const { data: session, isPending } = authClient.useSession()
+  const [showAccount, setShowAccount] = useState(false)
 
   if (isPending) {
     return (
@@ -118,60 +156,84 @@ function SidebarUserMenu() {
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        aria-label={`Buka menu akun ${user.name}`}
-        className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left transition-colors outline-none group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
-      >
-        <Avatar>
-          {user.image && (
-            <AvatarImage
-              src={user.image}
-              alt=""
-              keepMounted
-              referrerPolicy="no-referrer"
-              className="data-[error]:invisible data-[loading]:invisible"
-            />
-          )}
-          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-        </Avatar>
-        <span className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
-          <span className="block truncate text-sm font-medium">
-            {user.name}
-          </span>
-          <span className="block truncate text-xs text-muted-foreground">
-            {user.email}
-          </span>
-        </span>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent side="right" align="end" className="w-64">
-        <DropdownMenuLabel className="flex items-center gap-2 py-2">
-          <Avatar size="sm">
-            {user.image && (
-              <AvatarImage
-                src={user.image}
-                alt=""
-                keepMounted
-                referrerPolicy="no-referrer"
-                className="data-[error]:invisible data-[loading]:invisible"
-              />
-            )}
-            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-          </Avatar>
-          <span className="min-w-0">
-            <span className="block truncate text-sm text-foreground">
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          aria-label={`Buka menu akun ${user.name}`}
+          className="flex h-12 w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left transition-colors outline-none group-data-[collapsible=icon]:size-8 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-0 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+        >
+          <UserAvatar user={user} />
+          <span className="min-w-0 leading-tight group-data-[collapsible=icon]:hidden">
+            <span className="block truncate text-sm font-medium">
               {user.name}
             </span>
-            <span className="block truncate font-normal">{user.email}</span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {user.email}
+            </span>
           </span>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
-          <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
-          Keluar
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent side="right" align="end" className="w-64">
+          <DropdownMenuLabel className="flex items-center gap-2 py-2">
+            <UserAvatar user={user} size="sm" />
+            <span className="min-w-0">
+              <span className="block truncate text-sm text-foreground">
+                {user.name}
+              </span>
+              <span className="block truncate font-normal">{user.email}</span>
+            </span>
+          </DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => setShowAccount(true)}>
+            <HugeiconsIcon icon={UserCircleIcon} strokeWidth={2} />
+            Info akun
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => router.push("/")}>
+            <HugeiconsIcon icon={Home01Icon} strokeWidth={2} />
+            Kembali ke beranda
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
+            <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
+            Keluar
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <Dialog open={showAccount} onOpenChange={setShowAccount}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Info akun</DialogTitle>
+            <DialogDescription>
+              Detail akun yang sedang masuk ke panel admin.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-3">
+            <UserAvatar user={user} size="lg" />
+            <div className="min-w-0">
+              <p className="truncate font-medium">{user.name}</p>
+              <p className="truncate text-sm text-muted-foreground">
+                {user.email}
+              </p>
+            </div>
+          </div>
+          <dl className="flex items-center justify-between gap-4 text-sm">
+            <dt className="text-muted-foreground">Peran</dt>
+            <dd className="flex items-center gap-2 font-medium">
+              <HugeiconsIcon
+                icon={InformationCircleIcon}
+                strokeWidth={2}
+                className="size-4"
+              />
+              {user.role === "ADMIN" ? "Administrator" : "Pengguna"}
+            </dd>
+          </dl>
+          <DialogFooter>
+            <DialogClose render={<Button variant="outline" />}>
+              Tutup
+            </DialogClose>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
 
