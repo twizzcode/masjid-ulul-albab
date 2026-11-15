@@ -19,6 +19,10 @@ export function isBookingRoom(value: unknown): value is BookingRoom {
   )
 }
 
+export function canUserModifyBooking(status: BookingStatus) {
+  return status === "PENDING"
+}
+
 export function parseJakartaDateTime(date: unknown, time: unknown) {
   if (
     typeof date !== "string" ||

@@ -15,7 +15,7 @@
     "check:aspirasi": "bun scripts/check-aspiration.ts",
     "check:rate-limit": "bun scripts/check-rate-limit.ts",
     "check:keuangan": "bun scripts/check-keuangan.ts",
-    "check": "bun run lint && bun run typecheck && bun run check:aspirasi && bun run check:keuangan && bun run check:rate-limit && bun scripts/check-booking-conflicts.ts && bun scripts/check-admin-bookings.ts && bun scripts/check-auth-redirect.ts && bun scripts/check-auth-schema.ts",
+    "check": "bun run lint && bun run typecheck && bun run check:aspirasi && bun run check:keuangan && bun run check:rate-limit && bun scripts/check-booking-conflicts.ts && bun scripts/check-booking-history-actions.ts && bun scripts/check-admin-bookings.ts && bun scripts/check-auth-redirect.ts && bun scripts/check-auth-schema.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

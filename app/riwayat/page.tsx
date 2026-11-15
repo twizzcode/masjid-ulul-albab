@@ -1,5 +1,4 @@
 import {
-  ArrowUpRight01Icon,
   Calendar04Icon,
   File02Icon,
   Location01Icon,
@@ -14,6 +13,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 
 import { Badge } from "@/components/ui/badge"
+import { BookingHistoryActions } from "@/components/booking-history-actions"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -196,46 +196,7 @@ export default async function RiwayatPage({
                     />
                   </dl>
 
-                  {booking.letterUrl && (
-                    <div className="mt-5 flex justify-end border-t pt-4">
-                      <Button
-                        variant="outline"
-                        nativeButton={false}
-                        render={
-                          <a
-                            href={booking.letterUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          />
-                        }
-                      >
-                        Buka surat
-                        <HugeiconsIcon
-                          icon={ArrowUpRight01Icon}
-                          strokeWidth={2}
-                        />
-                      </Button>
-                    </div>
-                  )}
-                  {booking.status === "PENDING" && booking.confirmationUrl && (
-                    <div
-                      className={`${booking.letterUrl ? "mt-2" : "mt-5 border-t pt-4"} flex justify-end`}
-                    >
-                      <Button
-                        nativeButton={false}
-                        render={
-                          <a
-                            href={booking.confirmationUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          />
-                        }
-                      >
-                        <HugeiconsIcon icon={WhatsappIcon} strokeWidth={2} />
-                        Konfirmasi ke admin
-                      </Button>
-                    </div>
-                  )}
+                  <BookingHistoryActions booking={booking} />
                 </CardContent>
               </Card>
             ))}

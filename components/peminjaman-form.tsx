@@ -36,7 +36,6 @@ import {
 import { Button } from "@/components/ui/button"
 import { Calendar } from "@/components/ui/calendar"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Checkbox } from "@/components/ui/checkbox"
 import {
   Field,
   FieldDescription,
@@ -79,7 +78,6 @@ type FormState = {
   startTime: string
   endDate: string
   endTime: string
-  agreed: boolean
 }
 
 const INITIAL_FORM: FormState = {
@@ -93,7 +91,6 @@ const INITIAL_FORM: FormState = {
   startTime: "",
   endDate: "",
   endTime: "",
-  agreed: false,
 }
 
 type Errors = Partial<Record<keyof FormState | "schedule", string>>
@@ -194,10 +191,6 @@ export function PeminjamanForm({
 
       const scheduleError = getScheduleError(form)
       if (scheduleError) nextErrors.schedule = scheduleError
-    }
-
-    if (targetStep === 4 && !form.agreed) {
-      nextErrors.agreed = "Setujui ketentuan peminjaman sebelum mengajukan."
     }
 
     setErrors(nextErrors)
@@ -521,21 +514,6 @@ export function PeminjamanForm({
                       tanpa surat.
                     </p>
                   )}
-
-                  <Field className="mt-5" data-invalid={!!errors.agreed}>
-                    <FieldLabel className="items-start">
-                      <Checkbox
-                        checked={form.agreed}
-                        onCheckedChange={(checked) => update("agreed", checked)}
-                        aria-invalid={!!errors.agreed}
-                      />
-                      <span>
-                        Saya memastikan data benar dan bersedia mematuhi
-                        ketentuan penggunaan fasilitas masjid. <RequiredMark />
-                      </span>
-                    </FieldLabel>
-                    <FieldError>{errors.agreed}</FieldError>
-                  </Field>
 
                   {submitted && (
                     <div

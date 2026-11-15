@@ -10,7 +10,6 @@ import {
 } from "@/lib/bookings"
 import { db } from "@/lib/db"
 import { booking } from "@/lib/db/schema"
-import { r2PublicUrl } from "@/lib/r2"
 
 export type BookingHistoryItem = {
   id: string
@@ -19,8 +18,13 @@ export type BookingHistoryItem = {
   contactName: string
   whatsapp: string | null
   room: string
+  roomValue: BookingRoom
   startAt: string
   endAt: string
+  startDate: string
+  startTime: string
+  endDate: string
+  endTime: string
   submittedAt: string
   status: BookingStatus
   letterName: string | null
@@ -40,6 +44,9 @@ const formatDate = (date: Date) =>
 
 const formatTime = (date: Date) =>
   format(new TZDate(date, "Asia/Jakarta"), "HH:mm")
+
+const formatInputDate = (date: Date) =>
+  format(new TZDate(date, "Asia/Jakarta"), "yyyy-MM-dd")
 
 function getConfirmationUrl(record: typeof booking.$inferSelect) {
   const adminNumber = process.env.ADMIN_WHATSAPP_NUMBER?.replace(/\D/g, "")
@@ -101,12 +108,19 @@ export async function listBookingHistory(
       contactName: record.contactName,
       whatsapp: record.whatsapp,
       room: ROOM_NAMES[record.room as BookingRoom] ?? record.room,
+      roomValue: record.room as BookingRoom,
       startAt: formatDateTime(record.startAt),
       endAt: formatDateTime(record.endAt),
+      startDate: formatInputDate(record.startAt),
+      startTime: formatTime(record.startAt),
+      endDate: formatInputDate(record.endAt),
+      endTime: formatTime(record.endAt),
       submittedAt: formatDateTime(record.createdAt),
       status: record.status as BookingStatus,
       letterName: record.letterName,
-      letterUrl: record.letterKey ? r2PublicUrl(record.letterKey) : null,
+      letterUrl: record.letterKey
+        ? `/api/bookings/${encodeURIComponent(record.id)}/letter`
+        : null,
       confirmationUrl: getConfirmationUrl(record),
     })),
     total: Number(result?.value ?? 0),
