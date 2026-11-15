@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   MultiplicationSignIcon,
   Search01Icon,
@@ -10,7 +10,6 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import {
   type ColumnDef,
   type PaginationState,
-  type SortingState,
   useTable,
 } from "@tanstack/react-table"
 
@@ -44,15 +43,10 @@ import {
   InputGroupInput,
 } from "@/components/ui/input-group"
 import { useIsMobile } from "@/hooks/use-mobile"
-
-export type AdminAspiration = {
-  id: string
-  sender: string
-  isAnonymous: boolean
-  message: string
-  createdAt: string
-  submittedAt: string
-}
+import type {
+  AdminAspiration,
+  AdminAspirationPage,
+} from "@/lib/admin-aspirations"
 
 function DetailButton({
   aspiration,
@@ -75,34 +69,66 @@ function DetailButton({
 }
 
 export function AdminAspirations({
-  aspirations,
+  initialPage,
 }: {
-  aspirations: AdminAspiration[]
+  initialPage: AdminAspirationPage
 }) {
   const isMobile = useIsMobile()
+  const [aspirations, setAspirations] = useState(initialPage.aspirations)
+  const [total, setTotal] = useState(initialPage.total)
+  const [isLoading, setIsLoading] = useState(false)
+  const [loadError, setLoadError] = useState("")
+  const initialRender = useRef(true)
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<AdminAspiration | null>(null)
   const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   })
-  const [sorting, setSorting] = useState<SortingState>([
-    { id: "createdAt", desc: true },
-  ])
+  const rowsPerPage = 10
+  const pageIndex = pagination.pageIndex
 
-  const filteredAspirations = useMemo(() => {
-    const query = search.trim().toLocaleLowerCase("id-ID")
-    if (!query) return aspirations
-
-    return aspirations.filter(
-      (item) =>
-        item.sender.toLocaleLowerCase("id-ID").includes(query) ||
-        item.message.toLocaleLowerCase("id-ID").includes(query)
+  useEffect(() => {
+    if (initialRender.current) {
+      initialRender.current = false
+      return
+    }
+    const controller = new AbortController()
+    const timer = window.setTimeout(
+      async () => {
+        setIsLoading(true)
+        setLoadError("")
+        try {
+          const params = new URLSearchParams({ page: String(pageIndex + 1) })
+          if (search.trim()) params.set("search", search.trim())
+          const response = await fetch(`/api/admin/aspirations?${params}`, {
+            signal: controller.signal,
+          })
+          const result = (await response.json()) as AdminAspirationPage & {
+            message?: string
+          }
+          if (!response.ok) {
+            throw new Error(result.message ?? "Aspirasi gagal dimuat.")
+          }
+          setAspirations(result.aspirations)
+          setTotal(result.total)
+        } catch (error) {
+          if (error instanceof DOMException && error.name === "AbortError")
+            return
+          setLoadError(
+            error instanceof Error ? error.message : "Aspirasi gagal dimuat."
+          )
+        } finally {
+          if (!controller.signal.aborted) setIsLoading(false)
+        }
+      },
+      search ? 250 : 0
     )
-  }, [aspirations, search])
-
-  const rowsPerPage = isMobile ? Math.max(filteredAspirations.length, 1) : 10
-  const pageIndex = isMobile ? 0 : pagination.pageIndex
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [pageIndex, search])
 
   const columns = useMemo<
     ColumnDef<DataGridFeatures, AdminAspiration>[]
@@ -138,7 +164,6 @@ export function AdminAspirations({
               </div>
             )
           },
-          sortingFn: "datetime",
           size: 280,
           enableResizing: false,
           meta: { cellClassName: "whitespace-normal" },
@@ -186,7 +211,6 @@ export function AdminAspirations({
           <DataGridColumnHeader title="Dikirim" column={column} />
         ),
         cell: ({ row }) => row.original.submittedAt,
-        sortingFn: "datetime",
         size: 205,
       },
       {
@@ -207,12 +231,11 @@ export function AdminAspirations({
   const table = useTable({
     features: dataGridFeatures,
     columns,
-    data: filteredAspirations,
-    pageCount: Math.ceil(filteredAspirations.length / rowsPerPage),
+    data: aspirations,
+    pageCount: Math.ceil(total / rowsPerPage),
     getRowId: (row: AdminAspiration) => row.id,
     state: {
       pagination: { pageIndex, pageSize: rowsPerPage },
-      sorting,
     },
     onPaginationChange: (updater) =>
       setPagination((current) => {
@@ -222,8 +245,10 @@ export function AdminAspirations({
             : updater
         return { pageIndex: next.pageIndex, pageSize: rowsPerPage }
       }),
-    onSortingChange: setSorting,
-    autoResetPageIndex: true,
+    manualPagination: true,
+    manualSorting: true,
+    enableSorting: false,
+    autoResetPageIndex: false,
   })
 
   return (
@@ -240,7 +265,8 @@ export function AdminAspirations({
 
         <DataGrid
           table={table}
-          recordCount={filteredAspirations.length}
+          recordCount={total}
+          isLoading={isLoading}
           emptyMessage={
             search
               ? `Aspirasi dengan kata “${search}” tidak ditemukan.`
@@ -272,7 +298,7 @@ export function AdminAspirations({
             <CardHeader className="border-b px-3 py-3 sm:px-4">
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <p className="text-sm font-medium tabular-nums">
-                  {filteredAspirations.length} aspirasi
+                  {total} aspirasi
                 </p>
                 <InputGroup className="w-full sm:w-72">
                   <InputGroupAddon align="inline-start">
@@ -281,6 +307,7 @@ export function AdminAspirations({
                   <InputGroupInput
                     aria-label="Cari aspirasi"
                     placeholder="Cari nama atau isi..."
+                    maxLength={100}
                     value={search}
                     onChange={(event) => {
                       setSearch(event.target.value)
@@ -296,7 +323,13 @@ export function AdminAspirations({
                         aria-label="Hapus pencarian"
                         title="Hapus pencarian"
                         size="icon-xs"
-                        onClick={() => setSearch("")}
+                        onClick={() => {
+                          setSearch("")
+                          setPagination((current) => ({
+                            ...current,
+                            pageIndex: 0,
+                          }))
+                        }}
                       >
                         <HugeiconsIcon
                           icon={MultiplicationSignIcon}
@@ -308,6 +341,14 @@ export function AdminAspirations({
                 </InputGroup>
               </div>
             </CardHeader>
+            {loadError && (
+              <p
+                role="alert"
+                className="border-b px-4 py-3 text-sm text-destructive"
+              >
+                {loadError}
+              </p>
+            )}
             <CardContent className="p-0">
               <DataGridContainer>
                 <DataGridScrollArea
@@ -317,7 +358,7 @@ export function AdminAspirations({
                 </DataGridScrollArea>
               </DataGridContainer>
             </CardContent>
-            {!isMobile && filteredAspirations.length > 0 && (
+            {total > 0 && (
               <CardFooter className="border-t bg-transparent px-3 py-2 sm:px-4">
                 <DataGridPagination
                   sizes={[10]}

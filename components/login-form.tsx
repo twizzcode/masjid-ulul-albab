@@ -24,17 +24,21 @@ import { Input } from "@/components/ui/input"
 import { authClient } from "@/lib/auth-client"
 
 type AuthFormProps = React.ComponentProps<"div"> & {
+  callbackURL?: string
+  initialError?: string
   mode?: "login" | "signup"
 }
 
 export function LoginForm({
+  callbackURL = "/",
   className,
+  initialError = "",
   mode = "login",
   ...props
 }: AuthFormProps) {
   const isSignup = mode === "signup"
   const router = useRouter()
-  const [error, setError] = useState("")
+  const [error, setError] = useState(initialError)
   const [isPending, setIsPending] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -62,7 +66,7 @@ export function LoginForm({
         return
       }
 
-      router.push("/")
+      router.push(callbackURL)
       router.refresh()
     } catch {
       setError("Layanan autentikasi tidak dapat dihubungi.")
@@ -77,8 +81,8 @@ export function LoginForm({
     try {
       const result = await authClient.signIn.social({
         provider: "google",
-        callbackURL: "/",
-        errorCallbackURL: isSignup ? "/signup" : "/login",
+        callbackURL,
+        errorCallbackURL: `${isSignup ? "/signup" : "/login"}?callbackURL=${encodeURIComponent(callbackURL)}`,
       })
 
       if (result?.error) {
@@ -178,7 +182,9 @@ export function LoginForm({
                 </Button>
                 <FieldDescription className="text-center">
                   {isSignup ? "Sudah punya akun?" : "Belum punya akun?"}{" "}
-                  <Link href={isSignup ? "/login" : "/signup"}>
+                  <Link
+                    href={`${isSignup ? "/login" : "/signup"}?callbackURL=${encodeURIComponent(callbackURL)}`}
+                  >
                     {isSignup ? "Masuk" : "Daftar"}
                   </Link>
                 </FieldDescription>

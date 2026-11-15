@@ -1,4 +1,5 @@
 import { aspiration } from "@/lib/db/schema"
+import { consumeRateLimit, getClientAddress } from "@/lib/rate-limit"
 
 type AspirationPayload = {
   anonymous?: unknown
@@ -62,6 +63,29 @@ export async function POST(request: Request) {
   }
 
   try {
+    const rateLimit = await consumeRateLimit(getClientAddress(request), {
+      scope: "aspiration",
+      limit: 5,
+      windowMs: 10 * 60 * 1000,
+    })
+    if (!rateLimit.allowed) {
+      return Response.json(
+        { message: "Terlalu banyak aspirasi. Silakan coba lagi nanti." },
+        {
+          status: 429,
+          headers: { "Retry-After": String(rateLimit.retryAfterSeconds) },
+        }
+      )
+    }
+  } catch (error) {
+    console.error("Gagal memeriksa batas aspirasi", error)
+    return Response.json(
+      { message: "Layanan aspirasi sementara tidak tersedia." },
+      { status: 503 }
+    )
+  }
+
+  try {
     const { db } = await import("@/lib/db")
 
     await db.insert(aspiration).values({
@@ -79,6 +103,3 @@ export async function POST(request: Request) {
     )
   }
 }
-
-// ponytail: Validasi dan honeypot cukup untuk peluncuran; tambah rate limit
-// persisten saat endpoint mulai menerima spam.

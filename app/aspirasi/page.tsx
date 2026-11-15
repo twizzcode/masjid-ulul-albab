@@ -6,9 +6,10 @@ import { AspirationForm } from "@/components/aspiration-form"
 import { Card } from "@/components/ui/card"
 
 export const metadata: Metadata = {
-  title: "Kotak Aspirasi — Masjid Jami' Ulul Albab UNNES",
+  title: "Kotak Aspirasi",
   description:
     "Sampaikan saran, kritik, dan masukan untuk Masjid Jami' Ulul Albab UNNES.",
+  alternates: { canonical: "/aspirasi" },
 }
 
 export default function AspirationPage() {

@@ -4,7 +4,6 @@ import { useState } from "react"
 import type { ReactNode } from "react"
 import type { IconSvgElement } from "@hugeicons/react"
 import {
-  Calendar04Icon,
   Comment01Icon,
   DashboardSquare02Icon,
   Home01Icon,
@@ -67,8 +66,8 @@ import {
   SidebarTrigger,
 } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
+import { ScrollReveal } from "@/components/scroll-reveal"
 import { authClient } from "@/lib/auth-client"
-import { ADMIN_BOOKINGS } from "@/lib/admin-booking-data"
 
 type NavItem = {
   label: string
@@ -80,14 +79,13 @@ const NAV_ITEMS: NavItem[] = [
   { label: "Dashboard", icon: DashboardSquare02Icon, href: "/admin" },
   { label: "Peminjaman", icon: TaskDone01Icon, href: "/admin/peminjaman" },
   { label: "Aspirasi", icon: Comment01Icon, href: "/admin/aspirasi" },
-  { label: "Jadwal", icon: Calendar04Icon },
-  { label: "Keuangan", icon: MoneyReceive01Icon },
+  {
+    label: "Keuangan",
+    icon: MoneyReceive01Icon,
+    href: "/admin/keuangan",
+  },
   { label: "Pengguna", icon: UserMultiple02Icon, href: "/admin/pengguna" },
 ]
-
-const WAITING_BOOKINGS = ADMIN_BOOKINGS.filter(
-  (booking) => booking.status === "Menunggu"
-).length
 
 function getInitials(name: string) {
   return name
@@ -238,7 +236,7 @@ function SidebarUserMenu() {
   )
 }
 
-function AdminSidebar() {
+function AdminSidebar({ waitingBookings }: { waitingBookings: number }) {
   const pathname = usePathname()
 
   return (
@@ -295,13 +293,13 @@ function AdminSidebar() {
                       <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
-                    {item.label === "Peminjaman" && WAITING_BOOKINGS > 0 && (
+                    {item.label === "Peminjaman" && waitingBookings > 0 && (
                       <SidebarMenuBadge
                         className="-translate-y-1/2 rounded-full border border-warning/15 bg-warning/10 text-warning-foreground peer-data-[size=default]/menu-button:top-1/2 dark:border-warning/25 dark:bg-warning/15 dark:text-warning"
-                        aria-label={`${WAITING_BOOKINGS} peminjaman menunggu`}
-                        title={`${WAITING_BOOKINGS} peminjaman menunggu`}
+                        aria-label={`${waitingBookings} peminjaman menunggu`}
+                        title={`${waitingBookings} peminjaman menunggu`}
                       >
-                        {WAITING_BOOKINGS}
+                        {waitingBookings}
                       </SidebarMenuBadge>
                     )}
                   </SidebarMenuItem>
@@ -374,10 +372,12 @@ export function AdminShell({
   page,
   parent,
   children,
+  waitingBookings = 0,
 }: {
   page: string
   parent?: { label: string; href: string }
   children: ReactNode
+  waitingBookings?: number
 }) {
   return (
     <TooltipProvider>
@@ -394,14 +394,14 @@ export function AdminShell({
         }
       `}</style>
       <SidebarProvider data-admin-shell className="min-h-svh w-full">
-        <AdminSidebar />
+        <AdminSidebar waitingBookings={waitingBookings} />
         <SidebarInset>
           <header className="flex h-14 shrink-0 items-center gap-3 border-b px-3 sm:px-5">
             <SidebarTrigger aria-label="Buka atau tutup sidebar" />
             <Separator orientation="vertical" className="h-4" />
             <AdminBreadcrumb page={page} parent={parent} />
           </header>
-          {children}
+          <ScrollReveal>{children}</ScrollReveal>
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

@@ -4,12 +4,21 @@ import {
   IconBrandWhatsapp,
   IconMail,
   IconMessageCircle,
+  IconWallet,
 } from "@tabler/icons-react"
 
 import { HeroSlideshow } from "@/components/hero-slideshow"
 import { PrayerSchedule, type PrayerItem } from "@/components/prayer-schedule"
 import { getPrayerTimes } from "@/lib/prayer-times"
 import Link from "next/link"
+import type { Metadata } from "next"
+
+export const metadata: Metadata = {
+  title: { absolute: "Masjid Jami' Ulul Albab UNNES" },
+  description:
+    "Portal resmi Masjid Jami' Ulul Albab Universitas Negeri Semarang untuk jadwal salat, kegiatan, layanan, dan informasi jamaah.",
+  alternates: { canonical: "/" },
+}
 
 export default async function Page() {
   const schedule = await getPrayerTimes()
@@ -43,6 +52,13 @@ export default async function Page() {
               berbagai layanan dan kajian inspiratif dalam satu platform.
             </p>
             <div className="flex flex-wrap items-center gap-3">
+              <Link
+                href="/keuangan"
+                className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-5 py-2 text-sm font-bold transition duration-200 hover:-translate-y-0.5 hover:bg-muted sm:w-auto"
+              >
+                <IconWallet aria-hidden className="size-4" />
+                Keuangan
+              </Link>
               <Link
                 href="/peminjaman"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-2 text-sm font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] transition duration-200 hover:-translate-y-0.5 sm:w-auto"

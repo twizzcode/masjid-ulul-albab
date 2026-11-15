@@ -13,9 +13,13 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx}\"",
     "check:aspirasi": "bun scripts/check-aspiration.ts",
+    "check:rate-limit": "bun scripts/check-rate-limit.ts",
+    "check:keuangan": "bun scripts/check-keuangan.ts",
+    "check": "bun run lint && bun run typecheck && bun run check:aspirasi && bun run check:keuangan && bun run check:rate-limit && bun scripts/check-booking-conflicts.ts && bun scripts/check-admin-bookings.ts && bun scripts/check-auth-redirect.ts && bun scripts/check-auth-schema.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1169.0",
     "@base-ui/react": "^1.9.0",
     "@date-fns/tz": "^1.5.0",
     "@dnd-kit/core": "^6.3.1",

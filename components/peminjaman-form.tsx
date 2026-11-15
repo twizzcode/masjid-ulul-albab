@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
 import {
   IconAlertCircle,
   IconArrowLeft,
@@ -14,10 +15,6 @@ import {
 import { format, startOfDay } from "date-fns"
 import { id as localeId } from "date-fns/locale"
 
-import {
-  hasBookingConflict,
-  type BookingRoom,
-} from "@/components/peminjaman-calendar"
 import {
   Stepper,
   StepperContent,
@@ -53,21 +50,10 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
+import { ROOM_NAMES, type BookingRoom } from "@/lib/bookings"
 
 const MAX_FILE_SIZE = 2 * 1024 * 1024
-const STEPS = [
-  "Narahubung",
-  "Detail kegiatan",
-  "Jadwal",
-  "Review",
-] as const
-
-const ROOM_NAMES: Record<BookingRoom, string> = {
-  "aula-lantai-1": "Aula Masjid Lantai 1",
-  "ruang-solat-lantai-2": "Ruang Solat Lantai 2",
-  "pelataran-masjid": "Pelataran Masjid",
-  "lapangan-parkir": "Lapangan Parkir",
-}
+const STEPS = ["Narahubung", "Detail kegiatan", "Jadwal", "Review"] as const
 
 const TIME_PICKER_I18N = {
   labels: {
@@ -121,27 +107,48 @@ function toDate(date: string, time: string) {
   return date && time ? new Date(`${date}T${time}:00`) : null
 }
 
-function getScheduleError(form: FormState, anchorIso: string) {
+function getScheduleError(form: FormState) {
   const start = toDate(form.startDate, form.startTime)
   const end = toDate(form.endDate, form.endTime)
 
   if (!start || !end || !form.room) return undefined
   if (end <= start) return "Waktu selesai harus setelah waktu mulai."
-  if (hasBookingConflict(new Date(anchorIso), form.room, start, end)) {
-    return "Jadwal bertabrakan dengan peminjaman lain. Pilih waktu atau tempat berbeda."
-  }
 }
 
-export function PeminjamanForm({ anchorIso }: { anchorIso: string }) {
+function buildPublicPayload(form: FormState) {
+  const payload = new FormData()
+  payload.set("contactName", form.fullName)
+  payload.set("whatsapp", form.whatsapp)
+  payload.set("organizer", form.organizer)
+  payload.set("eventName", form.eventName)
+  if (form.letter) payload.set("letter", form.letter)
+  payload.set("room", form.room)
+  payload.set("startDate", form.startDate)
+  payload.set("startTime", form.startTime)
+  payload.set("endDate", form.endDate)
+  payload.set("endTime", form.endTime)
+  return payload
+}
+
+export function PeminjamanForm({
+  isAdmin = false,
+}: { isAdmin?: boolean } = {}) {
+  const router = useRouter()
   const [step, setStep] = useState(1)
   const [furthestStep, setFurthestStep] = useState(1)
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
   const [errors, setErrors] = useState<Errors>({})
   const [submitted, setSubmitted] = useState(false)
+  const [submitMessage, setSubmitMessage] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const update = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((current) => ({ ...current, [key]: value }))
-    setErrors((current) => ({ ...current, [key]: undefined, schedule: undefined }))
+    setErrors((current) => ({
+      ...current,
+      [key]: undefined,
+      schedule: undefined,
+    }))
     setSubmitted(false)
   }
 
@@ -158,21 +165,23 @@ export function PeminjamanForm({ anchorIso }: { anchorIso: string }) {
     }
 
     if (targetStep === 2) {
-      if (form.organizer.trim().length < 3) {
+      if (!isAdmin && form.organizer.trim().length < 3) {
         nextErrors.organizer = "Masukkan nama penyelenggara."
       }
       if (form.eventName.trim().length < 3) {
         nextErrors.eventName = "Masukkan nama kegiatan."
       }
-      if (!form.letter) {
+      if (!form.letter && !isAdmin) {
         nextErrors.letter = "Pilih surat peminjaman berformat PDF."
-      } else if (
-        form.letter.type !== "application/pdf" &&
-        !form.letter.name.toLowerCase().endsWith(".pdf")
-      ) {
-        nextErrors.letter = "Surat peminjaman harus berformat PDF."
-      } else if (form.letter.size > MAX_FILE_SIZE) {
-        nextErrors.letter = "Ukuran PDF maksimal 2 MB."
+      } else if (form.letter) {
+        if (
+          form.letter.type !== "application/pdf" &&
+          !form.letter.name.toLowerCase().endsWith(".pdf")
+        ) {
+          nextErrors.letter = "Surat peminjaman harus berformat PDF."
+        } else if (form.letter.size > MAX_FILE_SIZE) {
+          nextErrors.letter = "Ukuran PDF maksimal 2 MB."
+        }
       }
     }
 
@@ -183,7 +192,7 @@ export function PeminjamanForm({ anchorIso }: { anchorIso: string }) {
       if (!form.endDate) nextErrors.endDate = "Pilih tanggal selesai."
       if (!form.endTime) nextErrors.endTime = "Pilih waktu selesai."
 
-      const scheduleError = getScheduleError(form, anchorIso)
+      const scheduleError = getScheduleError(form)
       if (scheduleError) nextErrors.schedule = scheduleError
     }
 
@@ -202,22 +211,52 @@ export function PeminjamanForm({ anchorIso }: { anchorIso: string }) {
     setFurthestStep((current) => Math.max(current, next))
   }
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     if (!validateStep(4)) return
-    setSubmitted(true)
+    if (!form.room) return
+
+    setIsSubmitting(true)
+    setSubmitMessage("")
+
+    try {
+      const response = await fetch("/api/bookings", {
+        method: "POST",
+        body: buildPublicPayload(form),
+      })
+      const result = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
+      if (!response.ok) {
+        setSubmitMessage(result?.message ?? "Pengajuan gagal dikirim.")
+        if (response.status === 409) {
+          setErrors((current) => ({ ...current, schedule: result?.message }))
+          setStep(3)
+        }
+        return
+      }
+
+      setSubmitted(true)
+      setSubmitMessage(result?.message ?? "Pengajuan berhasil dikirim.")
+      router.replace("/riwayat")
+    } catch {
+      setSubmitMessage("Koneksi gagal. Periksa jaringan lalu coba lagi.")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const start = toDate(form.startDate, form.startTime)
   const end = toDate(form.endDate, form.endTime)
-  const scheduleError = getScheduleError(form, anchorIso) ?? errors.schedule
+  const scheduleError = getScheduleError(form) ?? errors.schedule
 
   return (
     <Card className="mt-8 gap-0 py-0">
       <CardHeader className="border-b px-6 py-6 md:px-8">
         <h3 className="text-xl font-semibold">Form pengajuan peminjaman</h3>
         <p className="text-sm text-muted-foreground">
-          Lengkapi data berikut. Isi data narahubung, kegiatan, dan jadwal pemakaian tempat.
+          Lengkapi data berikut. Isi data narahubung, kegiatan, dan jadwal
+          pemakaian tempat.
         </p>
       </CardHeader>
       <CardContent className="p-0">
@@ -264,103 +303,136 @@ export function PeminjamanForm({ anchorIso }: { anchorIso: string }) {
             </StepperNav>
 
             <div className="flex min-h-[38rem] min-w-0 flex-col px-6 pt-7 md:px-10 md:pt-9">
-            <StepperPanel className="flex-1">
-              <StepperContent value={1}>
-                <StepHeading
-                  title="Informasi narahubung"
-                  description="Data orang yang bisa dihubungi pengurus terkait pengajuan ini."
-                />
-                <FieldGroup className="mt-6 gap-5">
-                  <Field data-invalid={!!errors.fullName}>
-                    <RequiredLabel htmlFor="full-name">Nama lengkap</RequiredLabel>
-                    <Input
-                      id="full-name"
-                      value={form.fullName}
-                      onChange={(event) => update("fullName", event.target.value)}
-                      placeholder="Nama lengkap narahubung"
-                      autoComplete="name"
-                      aria-invalid={!!errors.fullName}
-                    />
-                    <FieldError>{errors.fullName}</FieldError>
-                  </Field>
-                  <Field data-invalid={!!errors.whatsapp}>
-                    <RequiredLabel htmlFor="whatsapp">Nomor WhatsApp</RequiredLabel>
-                    <Input
-                      id="whatsapp"
-                      type="tel"
-                      inputMode="tel"
-                      value={form.whatsapp}
-                      onChange={(event) => update("whatsapp", event.target.value)}
-                      placeholder="Contoh: 081234567890"
-                      autoComplete="tel"
-                      aria-invalid={!!errors.whatsapp}
-                    />
-                    <FieldDescription>
-                      Format Indonesia: 08, 62, atau +62.
-                    </FieldDescription>
-                    <FieldError>{errors.whatsapp}</FieldError>
-                  </Field>
-                </FieldGroup>
-              </StepperContent>
+              <StepperPanel className="flex-1">
+                <StepperContent value={1}>
+                  <StepHeading
+                    title="Informasi narahubung"
+                    description="Data orang yang bisa dihubungi pengurus terkait pengajuan ini."
+                  />
+                  <FieldGroup className="mt-6 gap-5">
+                    <Field data-invalid={!!errors.fullName}>
+                      <RequiredLabel htmlFor="full-name">
+                        Nama lengkap
+                      </RequiredLabel>
+                      <Input
+                        id="full-name"
+                        value={form.fullName}
+                        onChange={(event) =>
+                          update("fullName", event.target.value)
+                        }
+                        placeholder="Nama lengkap narahubung"
+                        autoComplete="name"
+                        aria-invalid={!!errors.fullName}
+                      />
+                      <FieldError>{errors.fullName}</FieldError>
+                    </Field>
+                    <Field data-invalid={!!errors.whatsapp}>
+                      <RequiredLabel htmlFor="whatsapp">
+                        Nomor WhatsApp
+                      </RequiredLabel>
+                      <Input
+                        id="whatsapp"
+                        type="tel"
+                        inputMode="tel"
+                        value={form.whatsapp}
+                        onChange={(event) =>
+                          update("whatsapp", event.target.value)
+                        }
+                        placeholder="Contoh: 081234567890"
+                        autoComplete="tel"
+                        aria-invalid={!!errors.whatsapp}
+                      />
+                      <FieldDescription>
+                        Format Indonesia: 08, 62, atau +62.
+                      </FieldDescription>
+                      <FieldError>{errors.whatsapp}</FieldError>
+                    </Field>
+                  </FieldGroup>
+                </StepperContent>
 
-              <StepperContent value={2}>
-                <StepHeading
-                  title="Detail kegiatan"
-                  description="Jelaskan penyelenggara dan kegiatan yang akan dilaksanakan."
-                />
-                <FieldGroup className="mt-6 gap-5">
-                  <Field data-invalid={!!errors.organizer}>
-                    <RequiredLabel htmlFor="organizer">Nama penyelenggara</RequiredLabel>
-                    <Input
-                      id="organizer"
-                      value={form.organizer}
-                      onChange={(event) => update("organizer", event.target.value)}
-                      placeholder="Contoh: UKKI UNNES, HIMA Matematika"
-                      aria-invalid={!!errors.organizer}
-                    />
-                    <FieldError>{errors.organizer}</FieldError>
-                  </Field>
-                  <Field data-invalid={!!errors.eventName}>
-                    <RequiredLabel htmlFor="event-name">Nama kegiatan</RequiredLabel>
-                    <Input
-                      id="event-name"
-                      value={form.eventName}
-                      onChange={(event) => update("eventName", event.target.value)}
-                      placeholder="Contoh: Kajian, workshop, seminar"
-                      aria-invalid={!!errors.eventName}
-                    />
-                    <FieldError>{errors.eventName}</FieldError>
-                  </Field>
-                  <Field data-invalid={!!errors.letter}>
-                    <RequiredLabel htmlFor="letter">Surat peminjaman</RequiredLabel>
-                    <Input
-                      id="letter"
-                      type="file"
-                      accept="application/pdf,.pdf"
-                      onChange={(event) =>
-                        update("letter", event.target.files?.[0] ?? null)
-                      }
-                      aria-invalid={!!errors.letter}
-                    />
-                    <FieldDescription>
-                      PDF maksimal 2 MB. File ditahan di perangkat dan baru
-                      diunggah saat tombol Ajukan peminjaman ditekan.
-                    </FieldDescription>
-                    <FieldError>{errors.letter}</FieldError>
-                  </Field>
-                </FieldGroup>
-              </StepperContent>
+                <StepperContent value={2}>
+                  <StepHeading
+                    title="Detail kegiatan"
+                    description="Jelaskan penyelenggara dan kegiatan yang akan dilaksanakan."
+                  />
+                  <FieldGroup className="mt-6 gap-5">
+                    <Field data-invalid={!!errors.organizer}>
+                      {isAdmin ? (
+                        <FieldLabel htmlFor="organizer">
+                          Nama penyelenggara (opsional)
+                        </FieldLabel>
+                      ) : (
+                        <RequiredLabel htmlFor="organizer">
+                          Nama penyelenggara
+                        </RequiredLabel>
+                      )}
+                      <Input
+                        id="organizer"
+                        value={form.organizer}
+                        onChange={(event) =>
+                          update("organizer", event.target.value)
+                        }
+                        placeholder="Contoh: UKKI UNNES, HIMA Matematika"
+                        aria-invalid={!!errors.organizer}
+                      />
+                      <FieldError>{errors.organizer}</FieldError>
+                    </Field>
+                    <Field data-invalid={!!errors.eventName}>
+                      <RequiredLabel htmlFor="event-name">
+                        Nama kegiatan
+                      </RequiredLabel>
+                      <Input
+                        id="event-name"
+                        value={form.eventName}
+                        onChange={(event) =>
+                          update("eventName", event.target.value)
+                        }
+                        placeholder="Contoh: Kajian, workshop, seminar"
+                        aria-invalid={!!errors.eventName}
+                      />
+                      <FieldError>{errors.eventName}</FieldError>
+                    </Field>
+                    <Field data-invalid={!!errors.letter}>
+                      {isAdmin ? (
+                        <FieldLabel htmlFor="letter">
+                          Surat peminjaman (opsional)
+                        </FieldLabel>
+                      ) : (
+                        <RequiredLabel htmlFor="letter">
+                          Surat peminjaman
+                        </RequiredLabel>
+                      )}
+                      <Input
+                        id="letter"
+                        type="file"
+                        accept="application/pdf,.pdf"
+                        onChange={(event) =>
+                          update("letter", event.target.files?.[0] ?? null)
+                        }
+                        aria-invalid={!!errors.letter}
+                      />
+                      <FieldDescription>
+                        PDF maksimal 2 MB.{" "}
+                        {isAdmin
+                          ? "Akun admin boleh mengajukan tanpa surat."
+                          : "File ditahan di perangkat dan baru diunggah saat tombol Ajukan peminjaman ditekan."}
+                      </FieldDescription>
+                      <FieldError>{errors.letter}</FieldError>
+                    </Field>
+                  </FieldGroup>
+                </StepperContent>
 
-              <StepperContent value={3} className="pb-8">
-                <StepHeading
-                  title="Jadwal peminjaman"
-                  description="Pilih tempat dan rentang waktu. Sistem akan memeriksa bentrok jadwal."
-                />
-                <Field className="mt-6" data-invalid={!!errors.room}>
-                  <RequiredLabel>Pilih tempat</RequiredLabel>
-                  <div className="grid gap-3">
-                    {(Object.entries(ROOM_NAMES) as [BookingRoom, string][]).map(
-                      ([value, label]) => (
+                <StepperContent value={3} className="pb-8">
+                  <StepHeading
+                    title="Jadwal peminjaman"
+                    description="Pilih tempat dan rentang waktu. Sistem akan memeriksa bentrok jadwal."
+                  />
+                  <Field className="mt-6" data-invalid={!!errors.room}>
+                    <RequiredLabel>Pilih tempat</RequiredLabel>
+                    <div className="grid gap-3">
+                      {(
+                        Object.entries(ROOM_NAMES) as [BookingRoom, string][]
+                      ).map(([value, label]) => (
                         <label
                           key={value}
                           className="flex cursor-pointer items-center gap-3 rounded-xl border p-4 transition-colors has-checked:border-primary has-checked:bg-primary/5"
@@ -375,136 +447,151 @@ export function PeminjamanForm({ anchorIso }: { anchorIso: string }) {
                           />
                           <span className="font-medium">{label}</span>
                         </label>
-                      ),
-                    )}
-                  </div>
-                  <FieldError>{errors.room}</FieldError>
-                </Field>
+                      ))}
+                    </div>
+                    <FieldError>{errors.room}</FieldError>
+                  </Field>
 
-                <FieldGroup className="mt-5 gap-5">
-                  <DateTimeFields
-                    prefix="start"
-                    title="Mulai"
-                    date={form.startDate}
-                    time={form.startTime}
-                    dateError={errors.startDate}
-                    timeError={errors.startTime}
-                    onDateChange={(value) => update("startDate", value)}
-                    onTimeChange={(value) => update("startTime", value)}
-                  />
-                  <DateTimeFields
-                    prefix="end"
-                    title="Selesai"
-                    date={form.endDate}
-                    time={form.endTime}
-                    dateError={errors.endDate}
-                    timeError={errors.endTime}
-                    onDateChange={(value) => update("endDate", value)}
-                    onTimeChange={(value) => update("endTime", value)}
-                  />
-                </FieldGroup>
-
-                {scheduleError && (
-                  <div
-                    role="alert"
-                    className="mt-5 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
-                  >
-                    <IconAlertCircle className="mt-0.5 size-4 shrink-0" />
-                    {scheduleError}
-                  </div>
-                )}
-              </StepperContent>
-
-              <StepperContent value={4}>
-                <StepHeading
-                  title="Review & ajukan"
-                  description="Periksa kembali data sebelum mengirim pengajuan."
-                />
-                <dl className="mt-6 grid gap-4 rounded-xl border bg-muted/30 p-5">
-                  <ReviewItem label="Narahubung" value={form.fullName} />
-                  <ReviewItem label="WhatsApp" value={form.whatsapp} />
-                  <ReviewItem label="Penyelenggara" value={form.organizer} />
-                  <ReviewItem label="Kegiatan" value={form.eventName} />
-                  <ReviewItem
-                    label="Surat peminjaman"
-                    value={form.letter?.name ?? "-"}
-                    icon={<IconFileDescription className="size-4" />}
-                  />
-                  <ReviewItem
-                    label="Tempat"
-                    value={form.room ? ROOM_NAMES[form.room] : "-"}
-                  />
-                  <ReviewItem
-                    label="Mulai"
-                    value={start ? formatDate(start) : "-"}
-                  />
-                  <ReviewItem
-                    label="Selesai"
-                    value={end ? formatDate(end) : "-"}
-                  />
-                </dl>
-
-                <Field className="mt-5" data-invalid={!!errors.agreed}>
-                  <FieldLabel className="items-start">
-                    <Checkbox
-                      checked={form.agreed}
-                      onCheckedChange={(checked) => update("agreed", checked)}
-                      aria-invalid={!!errors.agreed}
+                  <FieldGroup className="mt-5 gap-5">
+                    <DateTimeFields
+                      prefix="start"
+                      title="Mulai"
+                      date={form.startDate}
+                      time={form.startTime}
+                      dateError={errors.startDate}
+                      timeError={errors.startTime}
+                      onDateChange={(value) => update("startDate", value)}
+                      onTimeChange={(value) => update("startTime", value)}
                     />
-                    <span>
-                      Saya memastikan data benar dan bersedia mematuhi ketentuan
-                      penggunaan fasilitas masjid. <RequiredMark />
-                    </span>
-                  </FieldLabel>
-                  <FieldError>{errors.agreed}</FieldError>
-                </Field>
+                    <DateTimeFields
+                      prefix="end"
+                      title="Selesai"
+                      date={form.endDate}
+                      time={form.endTime}
+                      dateError={errors.endDate}
+                      timeError={errors.endTime}
+                      onDateChange={(value) => update("endDate", value)}
+                      onTimeChange={(value) => update("endTime", value)}
+                    />
+                  </FieldGroup>
 
-                {submitted && (
-                  <div
-                    role="status"
-                    className="mt-5 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
-                  >
-                    <IconCircleCheck className="mt-0.5 size-4 shrink-0" />
-                    Data lolos validasi. Pengiriman dan penyimpanan belum
-                    diaktifkan pada tahap ini.
-                  </div>
-                )}
-              </StepperContent>
-            </StepperPanel>
+                  {scheduleError && (
+                    <div
+                      role="alert"
+                      className="mt-5 flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive"
+                    >
+                      <IconAlertCircle className="mt-0.5 size-4 shrink-0" />
+                      {scheduleError}
+                    </div>
+                  )}
+                </StepperContent>
 
-            <div className="sticky bottom-0 z-20 -mx-6 mt-auto flex items-center justify-between gap-3 border-t bg-background/95 px-6 py-4 backdrop-blur-sm md:-mx-10 md:px-10">
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="min-w-28"
-                onClick={() => setStep((current) => Math.max(current - 1, 1))}
-                disabled={step === 1}
-              >
-                <IconArrowLeft data-icon="inline-start" />
-                Sebelumnya
-              </Button>
-              {step < 4 ? (
+                <StepperContent value={4}>
+                  <StepHeading
+                    title="Review & ajukan"
+                    description="Periksa kembali data sebelum mengirim pengajuan."
+                  />
+                  <dl className="mt-6 grid gap-4 rounded-xl border bg-muted/30 p-5">
+                    <ReviewItem label="Narahubung" value={form.fullName} />
+                    <ReviewItem label="WhatsApp" value={form.whatsapp} />
+                    <ReviewItem label="Penyelenggara" value={form.organizer} />
+                    <ReviewItem label="Kegiatan" value={form.eventName} />
+                    <ReviewItem
+                      label="Surat peminjaman"
+                      value={form.letter?.name ?? "Tanpa surat"}
+                      icon={<IconFileDescription className="size-4" />}
+                    />
+                    <ReviewItem
+                      label="Tempat"
+                      value={form.room ? ROOM_NAMES[form.room] : "-"}
+                    />
+                    <ReviewItem
+                      label="Mulai"
+                      value={start ? formatDate(start) : "-"}
+                    />
+                    <ReviewItem
+                      label="Selesai"
+                      value={end ? formatDate(end) : "-"}
+                    />
+                  </dl>
+
+                  {isAdmin && (
+                    <p className="mt-5 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300">
+                      Sebagai admin, pengajuan langsung disetujui dan boleh
+                      tanpa surat.
+                    </p>
+                  )}
+
+                  <Field className="mt-5" data-invalid={!!errors.agreed}>
+                    <FieldLabel className="items-start">
+                      <Checkbox
+                        checked={form.agreed}
+                        onCheckedChange={(checked) => update("agreed", checked)}
+                        aria-invalid={!!errors.agreed}
+                      />
+                      <span>
+                        Saya memastikan data benar dan bersedia mematuhi
+                        ketentuan penggunaan fasilitas masjid. <RequiredMark />
+                      </span>
+                    </FieldLabel>
+                    <FieldError>{errors.agreed}</FieldError>
+                  </Field>
+
+                  {submitted && (
+                    <div
+                      role="status"
+                      className="mt-5 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300"
+                    >
+                      <IconCircleCheck className="mt-0.5 size-4 shrink-0" />
+                      {submitMessage}
+                    </div>
+                  )}
+                  {!submitted && submitMessage && (
+                    <div role="alert" className="mt-5 text-sm text-destructive">
+                      {submitMessage}
+                    </div>
+                  )}
+                </StepperContent>
+              </StepperPanel>
+
+              <div className="sticky bottom-0 z-20 -mx-6 mt-auto flex items-center justify-between gap-3 border-t bg-background/95 px-6 py-4 backdrop-blur-sm md:-mx-10 md:px-10">
                 <Button
                   type="button"
+                  variant="outline"
                   size="lg"
-                  className="min-w-28 bg-gradient-to-b from-blue-500 to-blue-700 font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] hover:from-blue-500 hover:to-blue-800"
-                  onClick={nextStep}
+                  className="min-w-28"
+                  onClick={() => setStep((current) => Math.max(current - 1, 1))}
+                  disabled={step === 1}
                 >
-                  Selanjutnya
-                  <IconArrowRight data-icon="inline-end" />
+                  <IconArrowLeft data-icon="inline-start" />
+                  Sebelumnya
                 </Button>
-              ) : (
-                <Button
-                  type="submit"
-                  size="lg"
-                  className="min-w-40 bg-gradient-to-b from-blue-500 to-blue-700 font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] hover:from-blue-500 hover:to-blue-800"
-                >
-                  <IconSend data-icon="inline-start" />
-                  Ajukan peminjaman
-                </Button>
-              )}
-            </div>
+                {step < 4 ? (
+                  <Button
+                    type="button"
+                    size="lg"
+                    className="min-w-28 bg-gradient-to-b from-blue-500 to-blue-700 font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] hover:from-blue-500 hover:to-blue-800"
+                    onClick={nextStep}
+                  >
+                    Selanjutnya
+                    <IconArrowRight data-icon="inline-end" />
+                  </Button>
+                ) : (
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className="min-w-40 bg-gradient-to-b from-blue-500 to-blue-700 font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] hover:from-blue-500 hover:to-blue-800"
+                    disabled={isSubmitting || submitted}
+                  >
+                    <IconSend data-icon="inline-start" />
+                    {isSubmitting
+                      ? "Mengirim..."
+                      : submitted
+                        ? "Terkirim"
+                        : "Ajukan peminjaman"}
+                  </Button>
+                )}
+              </div>
             </div>
           </Stepper>
         </form>
@@ -513,7 +600,13 @@ export function PeminjamanForm({ anchorIso }: { anchorIso: string }) {
   )
 }
 
-function StepHeading({ title, description }: { title: string; description: string }) {
+function StepHeading({
+  title,
+  description,
+}: {
+  title: string
+  description: string
+}) {
   return (
     <div>
       <div className="flex items-center gap-2">

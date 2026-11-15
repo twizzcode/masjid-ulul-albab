@@ -14,7 +14,7 @@ import {
   WhatsappIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon, type IconSvgElement } from "@hugeicons/react"
-import { useState, type ReactNode } from "react"
+import { useState, useTransition, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 
 import { AdminShell } from "@/components/admin-shell"
@@ -61,19 +61,29 @@ function DetailItem({
       </span>
       <div className="min-w-0">
         <dt className="text-xs text-muted-foreground">{label}</dt>
-        <dd className="mt-1 wrap-break-word font-medium">{children}</dd>
+        <dd className="mt-1 font-medium wrap-break-word">{children}</dd>
       </div>
     </div>
   )
 }
 
-export function AdminBookingDetail({ booking }: { booking: Booking }) {
+export function AdminBookingDetail({
+  booking,
+  pendingCount,
+}: {
+  booking: Booking
+  pendingCount: number
+}) {
   const router = useRouter()
-  const whatsappUrl = `https://wa.me/${booking.whatsapp.replace(/\D/g, "")}`
+  const whatsappUrl = booking.whatsapp
+    ? `https://wa.me/${booking.whatsapp.replace(/\D/g, "")}`
+    : null
   const [status, setStatus] = useState(booking.status)
   const [action, setAction] = useState<"approve" | "reject" | "delete" | null>(
     null
   )
+  const [error, setError] = useState("")
+  const [isPending, startTransition] = useTransition()
 
   const confirmation = action
     ? {
@@ -95,21 +105,51 @@ export function AdminBookingDetail({ booking }: { booking: Booking }) {
       }[action]
     : null
 
-  const confirmAction = () => {
-    if (action === "approve") setStatus("Disetujui")
-    if (action === "reject") setStatus("Ditolak")
-    if (action === "delete") {
-      router.push("/admin/peminjaman")
+  const confirmAction = async () => {
+    if (!action) return
+    setError("")
+
+    const response = await fetch(
+      `/api/admin/bookings/${encodeURIComponent(booking.id)}`,
+      action === "delete"
+        ? { method: "DELETE" }
+        : {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              status: action === "approve" ? "APPROVED" : "REJECTED",
+            }),
+          }
+    )
+
+    if (!response.ok) {
+      const result = (await response.json().catch(() => null)) as {
+        message?: string
+      } | null
+      setError(result?.message ?? "Tindakan gagal diproses.")
       return
     }
 
+    if (action === "delete") {
+      router.replace("/admin/peminjaman")
+      router.refresh()
+      return
+    }
+
+    setStatus(action === "approve" ? "Disetujui" : "Ditolak")
     setAction(null)
+    startTransition(() => router.refresh())
   }
 
   return (
     <AdminShell
       page={booking.id}
       parent={{ label: "Peminjaman", href: "/admin/peminjaman" }}
+      waitingBookings={
+        pendingCount +
+        (booking.status === "Menunggu" ? -1 : 0) +
+        (status === "Menunggu" ? 1 : 0)
+      }
     >
       <div className="flex min-w-0 flex-1 flex-col gap-6 p-3 sm:p-5 lg:p-6">
         <div>
@@ -126,10 +166,7 @@ export function AdminBookingDetail({ booking }: { booking: Booking }) {
                 <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
                   {booking.activity}
                 </h1>
-                <Badge
-                  variant={STATUS_VARIANTS[status]}
-                  radius="full"
-                >
+                <Badge variant={STATUS_VARIANTS[status]} radius="full">
                   {status}
                 </Badge>
               </div>
@@ -158,6 +195,11 @@ export function AdminBookingDetail({ booking }: { booking: Booking }) {
               </Button>
             </div>
           </div>
+          {error && (
+            <p role="alert" className="mt-3 text-sm text-destructive">
+              {error}
+            </p>
+          )}
         </div>
 
         <div className="grid min-w-0 gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(20rem,2fr)]">
@@ -193,23 +235,30 @@ export function AdminBookingDetail({ booking }: { booking: Booking }) {
             </CardHeader>
             <CardContent>
               <dl className="grid gap-5">
-                <DetailItem icon={UserGroupIcon} label="Instansi / organisasi">
-                  {booking.requester}
-                </DetailItem>
+                {booking.requester && (
+                  <DetailItem
+                    icon={UserGroupIcon}
+                    label="Instansi / organisasi"
+                  >
+                    {booking.requester}
+                  </DetailItem>
+                )}
                 <DetailItem icon={UserIcon} label="Narahubung">
                   {booking.contactName}
                 </DetailItem>
-                <DetailItem icon={WhatsappIcon} label="WhatsApp">
-                  <a
-                    href={whatsappUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary underline-offset-4 transition-colors hover:underline"
-                    aria-label={`Hubungi ${booking.contactName} melalui WhatsApp`}
-                  >
-                    {booking.whatsapp}
-                  </a>
-                </DetailItem>
+                {whatsappUrl && booking.whatsapp && (
+                  <DetailItem icon={WhatsappIcon} label="WhatsApp">
+                    <a
+                      href={whatsappUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary underline-offset-4 transition-colors hover:underline"
+                      aria-label={`Hubungi ${booking.contactName} melalui WhatsApp`}
+                    >
+                      {booking.whatsapp}
+                    </a>
+                  </DetailItem>
+                )}
               </dl>
             </CardContent>
           </Card>
@@ -220,44 +269,52 @@ export function AdminBookingDetail({ booking }: { booking: Booking }) {
                 <h2>Surat permohonan</h2>
               </CardTitle>
               <CardDescription>
-                Dokumen PDF yang diunggah bersama pengajuan.
+                {booking.letterUrl
+                  ? "Dokumen PDF yang diunggah bersama pengajuan."
+                  : "Peminjaman ini dibuat langsung oleh admin tanpa surat."}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex min-w-0 items-center gap-3 rounded-lg border p-3">
-                <FileType type="pdf" size="lg" />
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium" title={booking.letterName}>
-                    {booking.letterName}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    PDF · {booking.letterSize}
-                  </p>
-                  <p className="mt-0.5 text-xs text-muted-foreground">
-                    Diunggah {booking.letterUploadedAt}
-                  </p>
-                </div>
-              </div>
-
               {booking.letterUrl ? (
-                <Button
-                  className="w-full"
-                  nativeButton={false}
-                  render={
-                    <a
-                      href={booking.letterUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    />
-                  }
-                >
-                  Buka surat
-                  <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={2} />
-                </Button>
+                <>
+                  <div className="flex min-w-0 items-center gap-3 rounded-lg border p-3">
+                    <FileType type="pdf" size="lg" />
+                    <div className="min-w-0 flex-1">
+                      <p
+                        className="truncate font-medium"
+                        title={booking.letterName ?? undefined}
+                      >
+                        {booking.letterName}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        PDF
+                        {booking.letterSize ? ` · ${booking.letterSize}` : ""}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Diunggah {booking.letterUploadedAt}
+                      </p>
+                    </div>
+                  </div>
+
+                  <Button
+                    className="w-full"
+                    nativeButton={false}
+                    render={
+                      <a
+                        href={booking.letterUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      />
+                    }
+                  >
+                    Buka surat
+                    <HugeiconsIcon icon={ArrowUpRight01Icon} strokeWidth={2} />
+                  </Button>
+                </>
               ) : (
-                <Button className="w-full" disabled>
-                  Buka surat
-                </Button>
+                <p className="rounded-lg border border-dashed p-3 text-sm text-muted-foreground">
+                  Tanpa surat
+                </p>
               )}
             </CardContent>
           </Card>
@@ -291,19 +348,25 @@ export function AdminBookingDetail({ booking }: { booking: Booking }) {
         </div>
       </div>
 
-      <Dialog open={action !== null} onOpenChange={(open) => !open && setAction(null)}>
+      <Dialog
+        open={action !== null}
+        onOpenChange={(open) => !open && setAction(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{confirmation?.title}</DialogTitle>
             <DialogDescription>{confirmation?.description}</DialogDescription>
           </DialogHeader>
           <DialogFooter>
-            <DialogClose render={<Button variant="outline" />}>Batal</DialogClose>
+            <DialogClose render={<Button variant="outline" />}>
+              Batal
+            </DialogClose>
             <Button
               variant={action === "approve" ? "default" : "destructive"}
               onClick={confirmAction}
+              disabled={isPending}
             >
-              {confirmation?.button}
+              {isPending ? "Memproses..." : confirmation?.button}
             </Button>
           </DialogFooter>
         </DialogContent>

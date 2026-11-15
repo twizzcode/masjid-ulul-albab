@@ -1,4 +1,5 @@
 import { Geist_Mono, Inter } from "next/font/google"
+import type { Metadata } from "next"
 
 import "./globals.css"
 import NavbarDemo from "@/components/resizable-navbar-demo"
@@ -13,6 +14,45 @@ const fontMono = Geist_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
 })
+
+const siteUrl = process.env.BETTER_AUTH_URL ?? "http://localhost:3000"
+
+export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl),
+  title: {
+    default: "Masjid Jami' Ulul Albab UNNES",
+    template: "%s | Masjid Jami' Ulul Albab UNNES",
+  },
+  description:
+    "Informasi kegiatan, peminjaman tempat, aspirasi, dan keuangan Masjid Jami' Ulul Albab Universitas Negeri Semarang.",
+  applicationName: "Masjid Jami' Ulul Albab UNNES",
+  keywords: [
+    "Masjid Jami' Ulul Albab",
+    "Masjid UNNES",
+    "Universitas Negeri Semarang",
+    "peminjaman tempat masjid",
+  ],
+  authors: [{ name: "Masjid Jami' Ulul Albab UNNES" }],
+  creator: "Masjid Jami' Ulul Albab UNNES",
+  publisher: "Masjid Jami' Ulul Albab UNNES",
+  formatDetection: { email: false, address: false, telephone: false },
+  icons: { icon: "/favicon.ico" },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    siteName: "Masjid Jami' Ulul Albab UNNES",
+    title: "Masjid Jami' Ulul Albab UNNES",
+    description:
+      "Informasi kegiatan, peminjaman tempat, aspirasi, dan keuangan Masjid Jami' Ulul Albab Universitas Negeri Semarang.",
+    url: "/",
+  },
+  twitter: {
+    card: "summary",
+    title: "Masjid Jami' Ulul Albab UNNES",
+    description:
+      "Informasi kegiatan, peminjaman tempat, aspirasi, dan keuangan Masjid Jami' Ulul Albab Universitas Negeri Semarang.",
+  },
+}
 
 export default function RootLayout({
   children,

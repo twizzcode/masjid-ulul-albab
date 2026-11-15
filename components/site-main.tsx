@@ -2,6 +2,8 @@
 
 import { usePathname } from "next/navigation"
 
+import { ScrollReveal } from "@/components/scroll-reveal"
+
 export function SiteMain({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
 
@@ -9,5 +11,9 @@ export function SiteMain({ children }: { children: React.ReactNode }) {
     return <div className="flex flex-1">{children}</div>
   }
 
-  return <main className="flex-1">{children}</main>
+  return (
+    <main className="flex-1">
+      <ScrollReveal>{children}</ScrollReveal>
+    </main>
+  )
 }

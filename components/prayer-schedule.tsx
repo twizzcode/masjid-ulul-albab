@@ -65,9 +65,13 @@ export function PrayerSchedule({
   const [now, setNow] = useState<Date | null>(null)
 
   useEffect(() => {
-    setNow(new Date())
-    const timer = setInterval(() => setNow(new Date()), 1000)
-    return () => clearInterval(timer)
+    const update = () => setNow(new Date())
+    const initial = window.setTimeout(update, 0)
+    const timer = window.setInterval(update, 1000)
+    return () => {
+      window.clearTimeout(initial)
+      window.clearInterval(timer)
+    }
   }, [])
 
   const currentSeconds = now ? secondsOfDay(now) : null
@@ -77,7 +81,7 @@ export function PrayerSchedule({
 
   if (currentSeconds !== null) {
     nextIndex = prayers.findIndex(
-      (prayer) => toSeconds(prayer.time) > currentSeconds,
+      (prayer) => toSeconds(prayer.time) > currentSeconds
     )
 
     if (nextIndex === -1) {
@@ -147,14 +151,14 @@ export function PrayerSchedule({
               key={prayer.name}
               className={cn(
                 "flex flex-col gap-4 rounded-xl border bg-background p-5 transition-colors",
-                isNext && "border-blue-500/40 bg-blue-50/60 dark:bg-blue-950/20",
+                isNext && "border-blue-500/40 bg-blue-50/60 dark:bg-blue-950/20"
               )}
             >
               <div className="flex items-center justify-between gap-2">
                 <span
                   className={cn(
                     "inline-flex size-9 items-center justify-center rounded-lg bg-muted text-muted-foreground",
-                    isNext && "bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                    isNext && "bg-blue-500/10 text-blue-600 dark:text-blue-400"
                   )}
                 >
                   <Icon className="size-5" />

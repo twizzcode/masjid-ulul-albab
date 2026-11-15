@@ -1,6 +1,14 @@
 "use client"
 
-import { useMemo, useState, useSyncExternalStore } from "react"
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react"
+import { TZDate } from "@date-fns/tz"
 import {
   IconBuildingCommunity,
   IconCalendarMonth,
@@ -8,16 +16,12 @@ import {
   IconCalendarWeek,
   IconListDetails,
   IconMapPin,
-  IconPhone,
-  IconUser,
 } from "@tabler/icons-react"
 import {
   addDays,
-  addMinutes,
   format,
   isSameMonth,
   isSameYear,
-  setHours,
   startOfDay,
   startOfWeek,
   subMilliseconds,
@@ -44,6 +48,7 @@ import {
 import type {
   CalendarEvent,
   EventCalendarOccurrence,
+  EventCalendarRangeInfo,
   EventCalendarResource,
 } from "@/components/reui/event-calendar/event-calendar-types"
 import { Badge } from "@/components/ui/badge"
@@ -56,6 +61,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import {
+  ROOM_NAMES,
+  type BookingRoom,
+  type BookingStatus as DbBookingStatus,
+} from "@/lib/bookings"
 
 const MOBILE_QUERY = "(max-width: 767px)"
 type CalendarTab = "month" | "week" | "agenda"
@@ -78,7 +88,7 @@ function useIsMobile() {
   return useSyncExternalStore(
     subscribeToMobile,
     () => window.matchMedia(MOBILE_QUERY).matches,
-    () => false,
+    () => false
   )
 }
 
@@ -114,8 +124,6 @@ const ROOM_COLORS = {
 
 const STATUS_COLORS = {
   pending: "var(--color-yellow-500)",
-  rejected: "var(--color-red-500)",
-  admin: "var(--color-orange-500)",
 } as const
 
 const LEGEND = [
@@ -124,40 +132,26 @@ const LEGEND = [
   { label: "Pelataran Masjid", color: "bg-violet-500" },
   { label: "Lapangan Parkir", color: "bg-cyan-500" },
   { label: "Menunggu persetujuan", color: "bg-yellow-500" },
-  { label: "Ditolak", color: "bg-red-500" },
-  { label: "Peminjaman admin", color: "bg-orange-500" },
 ]
 
-export type BookingRoom = keyof typeof ROOM_COLORS
 type Room = BookingRoom
 type BookingStatus = "approved" | keyof typeof STATUS_COLORS
 type BookingDetails = {
   status: BookingStatus
   room: Room
-  organizer: string
-  contactName: string
-  contactPhone: string
-}
-
-const ROOM_NAMES: Record<Room, string> = {
-  "aula-lantai-1": "Aula Masjid Lantai 1",
-  "ruang-solat-lantai-2": "Ruang Solat Lantai 2",
-  "pelataran-masjid": "Pelataran Masjid",
-  "lapangan-parkir": "Lapangan Parkir",
+  organizer: string | null
 }
 
 const STATUS_LABELS: Record<BookingStatus, string> = {
   approved: "Disetujui",
   pending: "Menunggu persetujuan",
-  rejected: "Ditolak",
-  admin: "Peminjaman admin",
 }
 
 const STATUS_CLASSES: Record<BookingStatus, string> = {
-  approved: "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
-  pending: "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900 dark:bg-yellow-950 dark:text-yellow-300",
-  rejected: "border-red-200 bg-red-50 text-red-700 dark:border-red-900 dark:bg-red-950 dark:text-red-300",
-  admin: "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300",
+  approved:
+    "border-blue-200 bg-blue-50 text-blue-700 dark:border-blue-900 dark:bg-blue-950 dark:text-blue-300",
+  pending:
+    "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900 dark:bg-yellow-950 dark:text-yellow-300",
 }
 
 function bookingColor(room: Room, status: BookingStatus) {
@@ -215,82 +209,123 @@ const I18N: EventCalendarI18nOverrides = {
   },
 }
 
-function buildBookings(anchor: Date): CalendarEvent<BookingDetails>[] {
-  const week = startOfWeek(startOfDay(anchor), { weekStartsOn: 1 })
-  const at = (dayOffset: number, hour: number, minute = 0) =>
-    addMinutes(setHours(addDays(week, dayOffset), hour), minute)
-  const day = (dayOffset: number) => addDays(week, dayOffset)
-
-  const booking = (
-    id: string,
-    title: string,
-    room: Room,
-    start: Date,
-    end: Date,
-    status: BookingStatus = "approved",
-    organizer = "Takmir Masjid Jami' Ulul Albab",
-    contactName = "Sekretariat Masjid",
-    contactPhone = "0812-3456-7890",
-  ): CalendarEvent<BookingDetails> => ({
-    id,
-    title,
-    start,
-    end,
-    resourceId: room,
-    color: bookingColor(room, status),
-    readOnly: true,
-    data: { status, room, organizer, contactName, contactPhone },
-  })
-
-  return [
-    booking("kajian-rutin", "Kajian Rutin", "aula-lantai-1", at(0, 19), at(0, 21)),
-    booking(
-      "rapat-takmir",
-      "Rapat Takmir",
-      "ruang-solat-lantai-2",
-      at(1, 16),
-      at(1, 17, 30),
-      "pending",
-    ),
-    booking("tahsin", "Pelatihan Tahsin", "ruang-solat-lantai-2", at(2, 8), at(2, 11)),
-    booking("kajian-admin", "Kajian Pengurus", "aula-lantai-1", at(4, 7), at(4, 12), "admin"),
-    booking("santunan", "Santunan Anak Yatim", "aula-lantai-1", at(5, 9), at(5, 12), "rejected"),
-    booking("kerja-bakti", "Kerja Bakti", "ruang-solat-lantai-2", at(6, 7), at(6, 10)),
-    booking(
-      "seminar",
-      "Seminar Kewirausahaan",
-      "aula-lantai-1",
-      at(10, 13),
-      at(10, 16),
-    ),
-    booking("rapat-panitia", "Rapat Panitia", "ruang-solat-lantai-2", at(11, 15, 30), at(11, 17)),
-    booking("reservasi-aula-1", "Reservasi Aula", "aula-lantai-1", day(12), day(13)),
-    booking("reservasi-aula-2", "Reservasi Aula", "aula-lantai-1", day(13), day(14)),
-  ]
+export type PublicBooking = {
+  id: string
+  eventName: string
+  organizer: string | null
+  room: BookingRoom
+  startAt: string
+  endAt: string
+  status: Exclude<DbBookingStatus, "REJECTED">
 }
 
-export function hasBookingConflict(
-  anchor: Date,
-  room: BookingRoom,
-  start: Date,
-  end: Date,
-) {
-  return buildBookings(anchor).some(
-    (event) =>
-      event.data?.status !== "rejected" &&
-      event.resourceId === room &&
-      start < event.end &&
-      end > event.start,
-  )
-}
-
-export function PeminjamanCalendar({ anchorIso }: { anchorIso: string }) {
-  const anchor = useMemo(() => new Date(anchorIso), [anchorIso])
+export function PeminjamanCalendar() {
   const isMobile = useIsMobile()
   const [tab, setTab] = useState<CalendarTab>("week")
+  const [bookings, setBookings] = useState<PublicBooking[]>([])
+  const [loading, setLoading] = useState(true)
+  const [loadError, setLoadError] = useState("")
+  const requestRef = useRef<AbortController | null>(null)
+  const activeRangeRef = useRef<EventCalendarRangeInfo | null>(null)
   const [selected, setSelected] =
     useState<EventCalendarOccurrence<BookingDetails> | null>(null)
-  const events = useMemo(() => buildBookings(anchor), [anchor])
+
+  const loadRange = useCallback(async ({ range }: EventCalendarRangeInfo) => {
+    requestRef.current?.abort()
+    const controller = new AbortController()
+    requestRef.current = controller
+    setLoading(true)
+    setLoadError("")
+
+    try {
+      const params = new URLSearchParams({
+        start: range.start.toISOString(),
+        end: range.end.toISOString(),
+      })
+      const response = await fetch(`/api/bookings?${params}`, {
+        cache: "no-store",
+        signal: controller.signal,
+      })
+      const result = (await response.json()) as {
+        bookings?: PublicBooking[]
+        message?: string
+      }
+      if (!response.ok) {
+        throw new Error(result.message ?? "Jadwal gagal dimuat.")
+      }
+      setBookings(result.bookings ?? [])
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return
+      setBookings([])
+      setLoadError(
+        error instanceof Error ? error.message : "Jadwal gagal dimuat."
+      )
+    } finally {
+      if (requestRef.current === controller) {
+        setLoading(false)
+      }
+    }
+  }, [])
+
+  const handleRangeChange = useCallback(
+    (info: EventCalendarRangeInfo) => {
+      activeRangeRef.current = info
+      void loadRange(info)
+    },
+    [loadRange]
+  )
+
+  useEffect(() => {
+    const start = startOfWeek(
+      startOfDay(new TZDate(Date.now(), "Asia/Jakarta")),
+      { weekStartsOn: 1 }
+    )
+    const initialRange: EventCalendarRangeInfo = {
+      range: { start, end: addDays(start, 7) },
+      activeRange: { start, end: addDays(start, 7) },
+      view: "week",
+      date: new Date(),
+      timeZone: "Asia/Jakarta",
+    }
+    const range = activeRangeRef.current ?? initialRange
+    activeRangeRef.current = range
+    void loadRange(range)
+
+    const refresh = () => {
+      if (document.visibilityState === "visible" && activeRangeRef.current) {
+        void loadRange(activeRangeRef.current)
+      }
+    }
+    window.addEventListener("pageshow", refresh)
+    document.addEventListener("visibilitychange", refresh)
+    return () => {
+      requestRef.current?.abort()
+      window.removeEventListener("pageshow", refresh)
+      document.removeEventListener("visibilitychange", refresh)
+    }
+  }, [loadRange])
+
+  const events = useMemo<CalendarEvent<BookingDetails>[]>(
+    () =>
+      bookings.map((item) => {
+        const status = item.status === "APPROVED" ? "approved" : "pending"
+        return {
+          id: item.id,
+          title: item.eventName,
+          start: new Date(item.startAt),
+          end: new Date(item.endAt),
+          resourceId: item.room,
+          color: bookingColor(item.room, status),
+          readOnly: true,
+          data: {
+            status,
+            room: item.room,
+            organizer: item.organizer,
+          },
+        }
+      }),
+    [bookings]
+  )
   const view = tab === "week" && isMobile ? "days" : tab
   const details = selected?.event.data
 
@@ -301,6 +336,8 @@ export function PeminjamanCalendar({ anchorIso }: { anchorIso: string }) {
         event.preventDefault()
         setSelected(occurrence)
       }}
+      onRangeChange={handleRangeChange}
+      loading={loading}
       view={view}
       views={["month", "week", "days", "agenda"]}
       dayCount={3}
@@ -308,6 +345,7 @@ export function PeminjamanCalendar({ anchorIso }: { anchorIso: string }) {
       locale={localeId}
       i18n={I18N}
       weekStartsOn={1}
+      timeZone="Asia/Jakarta"
       dayStartHour={0}
       dayEndHour={24}
       interactions={{ drag: false, resize: false, selectSlot: false }}
@@ -371,6 +409,11 @@ export function PeminjamanCalendar({ anchorIso }: { anchorIso: string }) {
         </Tabs>
       </div>
       <EventCalendarContent />
+      {loadError && (
+        <p role="alert" className="border-t px-4 py-3 text-sm text-destructive">
+          {loadError}
+        </p>
+      )}
       <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 border-t px-4 py-3 text-center text-xs text-muted-foreground">
         {LEGEND.map((item) => (
           <span key={item.label} className="inline-flex items-center gap-1.5">
@@ -411,33 +454,13 @@ export function PeminjamanCalendar({ anchorIso }: { anchorIso: string }) {
                       label="Tempat"
                       value={ROOM_NAMES[details.room]}
                     />
-                    <DetailRow
-                      icon={IconBuildingCommunity}
-                      label="Penyelenggara"
-                      value={details.organizer}
-                    />
-                  </CardContent>
-                </Card>
-
-                <Card size="sm">
-                  <CardContent className="grid gap-4 sm:grid-cols-2 sm:gap-5">
-                    <DetailRow
-                      icon={IconUser}
-                      label="Narahubung"
-                      value={details.contactName}
-                    />
-                    <DetailRow
-                      icon={IconPhone}
-                      label="Kontak"
-                      value={
-                        <a
-                          href={`tel:${details.contactPhone.replace(/[^+\d]/g, "")}`}
-                          className="font-medium text-foreground underline underline-offset-4"
-                        >
-                          {details.contactPhone}
-                        </a>
-                      }
-                    />
+                    {details.organizer && (
+                      <DetailRow
+                        icon={IconBuildingCommunity}
+                        label="Penyelenggara"
+                        value={details.organizer}
+                      />
+                    )}
                   </CardContent>
                 </Card>
 
@@ -446,9 +469,13 @@ export function PeminjamanCalendar({ anchorIso }: { anchorIso: string }) {
                     <DetailRow
                       icon={IconCalendarTime}
                       label="Waktu mulai"
-                      value={format(selected.start, "EEEE, d MMMM yyyy · HH:mm", {
-                        locale: localeId,
-                      })}
+                      value={format(
+                        selected.start,
+                        "EEEE, d MMMM yyyy · HH:mm",
+                        {
+                          locale: localeId,
+                        }
+                      )}
                     />
                     <DetailRow
                       icon={IconCalendarTime}
@@ -484,7 +511,7 @@ function DetailRow({
       </span>
       <div>
         <dt className="text-xs text-muted-foreground">{label}</dt>
-        <dd className="mt-1 font-medium leading-snug">{value}</dd>
+        <dd className="mt-1 leading-snug font-medium">{value}</dd>
       </div>
     </div>
   )
