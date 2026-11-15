@@ -61,7 +61,13 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
-function AccountMenu({ mobile = false }: { mobile?: boolean }) {
+function AccountMenu({
+  mobile = false,
+  onNavigate,
+}: {
+  mobile?: boolean
+  onNavigate?: () => void
+}) {
   const router = useRouter()
   const { data: session, isPending } = authClient.useSession()
 
@@ -84,6 +90,7 @@ function AccountMenu({ mobile = false }: { mobile?: boolean }) {
         href="/login"
         variant={mobile ? "primary" : "gradient"}
         className={mobile ? "w-full" : undefined}
+        onClick={onNavigate}
       >
         Masuk
       </NavbarButton>
@@ -93,6 +100,7 @@ function AccountMenu({ mobile = false }: { mobile?: boolean }) {
   const { user } = session
 
   async function handleSignOut() {
+    onNavigate?.()
     await authClient.signOut({
       fetchOptions: {
         onSuccess: () => {
@@ -101,6 +109,77 @@ function AccountMenu({ mobile = false }: { mobile?: boolean }) {
         },
       },
     })
+  }
+
+  if (mobile) {
+    return (
+      <div className="w-full overflow-hidden rounded-xl border bg-muted/30 shadow-sm">
+        <div className="flex items-center gap-3 border-b bg-background px-3 py-3">
+          <Avatar size="lg">
+            {user.image && (
+              <AvatarImage
+                src={user.image}
+                alt={user.name}
+                keepMounted
+                referrerPolicy="no-referrer"
+                className="data-[error]:invisible data-[loading]:invisible"
+              />
+            )}
+            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+          </Avatar>
+          <span className="min-w-0">
+            <span className="block truncate text-sm font-medium">
+              {user.name}
+            </span>
+            <span className="block truncate text-xs text-muted-foreground">
+              {user.email}
+            </span>
+          </span>
+        </div>
+
+        <div className="grid gap-1 p-2">
+          <Link
+            href="/riwayat"
+            onClick={onNavigate}
+            className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+          >
+            <HugeiconsIcon
+              icon={HistoryIcon}
+              strokeWidth={2}
+              className="size-4"
+            />
+            Riwayat peminjaman
+          </Link>
+          {user.role === "ADMIN" && (
+            <Link
+              href="/admin"
+              onClick={onNavigate}
+              className="flex items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-accent"
+            >
+              <HugeiconsIcon
+                icon={DashboardSquare01Icon}
+                strokeWidth={2}
+                className="size-4"
+              />
+              Dashboard admin
+            </Link>
+          )}
+          <div className="my-1 border-t" />
+          <button
+            type="button"
+            onClick={() => void handleSignOut()}
+            className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-left text-sm text-destructive hover:bg-destructive/10"
+          >
+            <HugeiconsIcon
+              icon={Logout01Icon}
+              strokeWidth={2}
+              className="size-4"
+            />
+            Keluar
+          </button>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -169,6 +248,7 @@ function AccountMenu({ mobile = false }: { mobile?: boolean }) {
             Dashboard admin
           </DropdownMenuItem>
         )}
+        <DropdownMenuSeparator />
         <DropdownMenuItem variant="destructive" onClick={handleSignOut}>
           <HugeiconsIcon icon={Logout01Icon} strokeWidth={2} />
           Keluar
@@ -225,7 +305,7 @@ export default function NavbarDemo() {
             </Link>
           ))}
           <div className="flex w-full flex-col gap-4">
-            <AccountMenu mobile />
+            <AccountMenu mobile onNavigate={() => setIsMobileMenuOpen(false)} />
           </div>
         </MobileNavMenu>
       </MobileNav>

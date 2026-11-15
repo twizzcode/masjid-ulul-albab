@@ -264,7 +264,7 @@ export function PeminjamanForm({
             }}
             className="grid lg:grid-cols-[17rem_minmax(0,1fr)]"
           >
-            <StepperNav className="gap-1 border-b px-4 py-4 lg:min-h-[38rem] lg:flex-col! lg:items-stretch lg:gap-2 lg:border-r lg:border-b-0 lg:p-5">
+            <StepperNav className="gap-1 border-b px-4 py-4 lg:flex-col! lg:items-stretch lg:gap-2 lg:border-r lg:border-b-0 lg:p-5">
               {STEPS.map((title, index) => {
                 const value = index + 1
                 return (
@@ -295,8 +295,8 @@ export function PeminjamanForm({
               })}
             </StepperNav>
 
-            <div className="flex min-h-[38rem] min-w-0 flex-col px-6 pt-7 md:px-10 md:pt-9">
-              <StepperPanel className="flex-1">
+            <div className="flex min-w-0 flex-col px-6 pt-7 md:px-10 md:pt-9">
+              <StepperPanel className="flex-1 pb-6 md:pb-8">
                 <StepperContent value={1}>
                   <StepHeading
                     title="Informasi narahubung"
@@ -415,7 +415,7 @@ export function PeminjamanForm({
                   </FieldGroup>
                 </StepperContent>
 
-                <StepperContent value={3} className="pb-8">
+                <StepperContent value={3}>
                   <StepHeading
                     title="Jadwal peminjaman"
                     description="Pilih tempat dan rentang waktu. Sistem akan memeriksa bentrok jadwal."

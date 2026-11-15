@@ -19,26 +19,25 @@ export const metadata: Metadata = {
 
 export default async function PeminjamanPage() {
   const session = await auth.api.getSession({ headers: await headers() })
-  const formHref = session
-    ? "#form-peminjaman"
-    : "/login?callbackURL=%2Fpeminjaman%23form-peminjaman"
   const historyHref = session ? "/riwayat" : "/login?callbackURL=%2Friwayat"
+  const applyButtonClass =
+    "inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-2 text-sm font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] transition duration-200 hover:-translate-y-0.5 sm:w-auto"
 
   return (
-    <div className="container mx-auto w-full max-w-7xl px-3 pt-8 pb-24 sm:px-6 md:pt-12">
+    <div className="container mx-auto w-full max-w-7xl px-3 pt-6 pb-24 sm:px-6 md:pt-8">
       {/* Hero peminjaman */}
-      <section className="relative isolate overflow-hidden rounded-3xl border bg-muted px-6 py-10 text-center md:px-10 md:py-14">
+      <section className="relative isolate overflow-hidden rounded-3xl border bg-muted px-5 py-7 text-center md:px-8 md:py-9">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-40 left-1/2 -z-10 h-80 w-[42rem] -translate-x-1/2 rounded-full bg-blue-500/10 blur-3xl"
         />
 
-        <div className="mx-auto flex max-w-2xl flex-col items-center gap-5">
-          <h1 className="text-4xl font-bold tracking-tight md:text-5xl">
+        <div className="mx-auto flex max-w-2xl flex-col items-center gap-4">
+          <h1 className="text-3xl font-bold tracking-tight md:text-4xl">
             Peminjaman Tempat
           </h1>
 
-          <p className="max-w-xl text-muted-foreground">
+          <p className="max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
             Butuh ruang untuk kajian, seminar, atau kegiatan sosial? Aula lantai
             satu dan ruang salat lantai dua bisa dipinjam untuk kegiatan yang
             bermanfaat bagi jamaah dan masyarakat sekitar.
@@ -47,17 +46,23 @@ export default async function PeminjamanPage() {
           <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:flex-row">
             <Link
               href={historyHref}
-              className="inline-flex w-full items-center justify-center rounded-md border border-input bg-background px-5 py-2 text-sm font-medium transition-colors hover:bg-muted sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-md border border-input bg-gradient-to-b from-white to-neutral-100 px-5 py-2 text-sm font-bold text-neutral-900 shadow-[0px_2px_0px_0px_rgba(255,255,255,0.9)_inset] transition duration-200 hover:-translate-y-0.5 hover:from-white hover:to-neutral-200 sm:w-auto dark:from-neutral-800 dark:to-neutral-950 dark:text-white dark:shadow-[0px_2px_0px_0px_rgba(255,255,255,0.12)_inset] dark:hover:from-neutral-800 dark:hover:to-black"
             >
               Lihat riwayat
             </Link>
             <PeminjamanFacilitiesDialog />
-            <Link
-              href={formHref}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-2 text-sm font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] transition duration-200 hover:-translate-y-0.5 sm:w-auto"
-            >
-              Ajukan peminjaman
-            </Link>
+            {session ? (
+              <a href="#form-peminjaman" className={applyButtonClass}>
+                Ajukan peminjaman
+              </a>
+            ) : (
+              <Link
+                href="/login?callbackURL=%2Fpeminjaman%23form-peminjaman"
+                className={applyButtonClass}
+              >
+                Ajukan peminjaman
+              </Link>
+            )}
           </div>
         </div>
       </section>

@@ -65,7 +65,7 @@ export function PeminjamanFacilitiesDialog() {
         render={
           <Button
             variant="outline"
-            className="h-9 w-full rounded-md border-input px-5 font-medium sm:w-auto"
+            className="h-9 w-full rounded-md border-input bg-gradient-to-b from-white to-neutral-100 px-5 font-bold text-neutral-900 shadow-[0px_2px_0px_0px_rgba(255,255,255,0.9)_inset] transition duration-200 hover:-translate-y-0.5 hover:from-white hover:to-neutral-200 sm:w-auto dark:from-neutral-800 dark:to-neutral-950 dark:text-white dark:shadow-[0px_2px_0px_0px_rgba(255,255,255,0.12)_inset] dark:hover:from-neutral-800 dark:hover:to-black"
           />
         }
       >

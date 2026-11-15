@@ -88,7 +88,7 @@ export default async function RiwayatPage({
   if (page > 1 && page > pageCount) redirect("/riwayat")
 
   return (
-    <div className="container mx-auto w-full max-w-7xl px-3 pt-8 pb-24 sm:px-6 md:pt-12">
+    <div className="container mx-auto w-full max-w-7xl px-3 pt-6 pb-24 sm:px-6 md:pt-8">
       <section className="relative isolate overflow-hidden rounded-3xl border bg-muted px-6 py-10 text-center md:px-10 md:py-14">
         <div
           aria-hidden

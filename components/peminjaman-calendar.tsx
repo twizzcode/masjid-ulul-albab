@@ -36,7 +36,6 @@ import {
   EventCalendarNav,
   EventCalendarNavNext,
   EventCalendarNavPrev,
-  EventCalendarNavToday,
   EventCalendarTitle,
 } from "@/components/reui/event-calendar/event-calendar-nav"
 import { EventCalendarResourceView } from "@/components/reui/event-calendar/event-calendar-resource-view"
@@ -75,6 +74,10 @@ const CALENDAR_VIEWS = {
   day: () => <EventCalendarDayView showAllDay={false} />,
   days: () => <EventCalendarDaysView showAllDay={false} />,
   resource: () => <EventCalendarResourceView showAllDay={false} />,
+}
+
+const READ_ONLY_CLASS_NAMES = {
+  event: "touch-pan-y",
 }
 
 function subscribeToMobile(onChange: () => void) {
@@ -199,12 +202,12 @@ const I18N: EventCalendarI18nOverrides = {
       const start = activeRange.start
       const end = subMilliseconds(activeRange.end, 1)
       if (isSameMonth(start, end)) {
-        return `${format(start, "d", options)}–${format(end, "d MMMM yyyy", options)}`
+        return `${format(start, "d", options)} - ${format(end, "d MMMM yyyy", options)}`
       }
       if (isSameYear(start, end)) {
-        return `${format(start, "d MMMM", options)}–${format(end, "d MMMM yyyy", options)}`
+        return `${format(start, "d MMMM", options)} - ${format(end, "d MMMM yyyy", options)}`
       }
-      return `${format(start, "d MMMM yyyy", options)}–${format(end, "d MMMM yyyy", options)}`
+      return `${format(start, "d MMMM yyyy", options)} - ${format(end, "d MMMM yyyy", options)}`
     },
   },
 }
@@ -350,63 +353,67 @@ export function PeminjamanCalendar() {
       dayEndHour={24}
       interactions={{ drag: false, resize: false, selectSlot: false }}
       todayClassName="bg-primary/5"
-      eventTooltip
+      eventTooltip={!isMobile}
       scrollMode="page"
       enableShortcuts={false}
       components={CALENDAR_VIEWS}
+      classNames={READ_ONLY_CLASS_NAMES}
       className="relative isolate z-0 w-full"
     >
-      <div className="flex flex-col gap-2 px-3 py-2 sm:flex-row sm:items-center sm:px-4">
-        <EventCalendarNav
-          showViewSwitcher={false}
-          className="w-full min-w-0 px-0 sm:flex-1"
-        >
-          <div className="flex w-full items-center gap-2">
-            <EventCalendarNavToday
-              tooltip={null}
-              className="h-9 shrink-0 border border-border bg-background px-3 hover:bg-muted"
-            />
-            <div className="flex min-w-0 flex-1 items-center gap-1">
-              <EventCalendarNavPrev
-                tooltip={null}
-                className="size-9! shrink-0 border border-border bg-background hover:bg-muted"
-              />
-              <EventCalendarDatePicker
-                tooltip={null}
-                className="h-9! w-full! min-w-0 flex-1 border border-border bg-background px-2 hover:bg-muted md:w-64! md:flex-none"
-              >
-                <EventCalendarTitle
-                  render={<span />}
-                  className="m-0 w-full text-center"
-                />
-              </EventCalendarDatePicker>
-              <EventCalendarNavNext
-                tooltip={null}
-                className="size-9! shrink-0 border border-border bg-background hover:bg-muted"
-              />
-            </div>
-          </div>
-        </EventCalendarNav>
+      <div className="flex flex-col gap-3 border-b bg-muted/20 px-3 py-3 md:flex-row md:items-center md:justify-between md:px-4">
         <Tabs
           value={tab}
           onValueChange={(value) => value && setTab(value as CalendarTab)}
-          className="w-full sm:ml-auto sm:w-auto"
+          className="w-full md:w-auto"
         >
-          <TabsList className="w-full sm:w-fit">
-            <TabsTrigger value="month" className="flex-1 sm:flex-none">
+          <TabsList className="h-10! w-full border bg-muted p-1 md:w-fit">
+            <TabsTrigger
+              value="month"
+              className="flex-1 hover:bg-background/70 md:flex-none data-active:border-border data-active:bg-background data-active:text-foreground data-active:shadow-sm"
+            >
               <IconCalendarMonth aria-hidden data-icon="inline-start" />
               Bulan
             </TabsTrigger>
-            <TabsTrigger value="week" className="flex-1 sm:flex-none">
+            <TabsTrigger
+              value="week"
+              className="flex-1 hover:bg-background/70 md:flex-none data-active:border-border data-active:bg-background data-active:text-foreground data-active:shadow-sm"
+            >
               <IconCalendarWeek aria-hidden data-icon="inline-start" />
               Minggu
             </TabsTrigger>
-            <TabsTrigger value="agenda" className="flex-1 sm:flex-none">
+            <TabsTrigger
+              value="agenda"
+              className="flex-1 hover:bg-background/70 md:flex-none data-active:border-border data-active:bg-background data-active:text-foreground data-active:shadow-sm"
+            >
               <IconListDetails aria-hidden data-icon="inline-start" />
               Agenda
             </TabsTrigger>
           </TabsList>
         </Tabs>
+        <EventCalendarNav
+          showViewSwitcher={false}
+          className="w-full min-w-0 rounded-lg border bg-muted p-1 md:w-auto"
+        >
+          <div className="flex w-full min-w-0 items-center gap-1 md:w-auto">
+            <EventCalendarNavPrev
+              tooltip={null}
+              className="size-8! shrink-0 border-border bg-background hover:bg-accent"
+            />
+            <EventCalendarDatePicker
+              tooltip={null}
+              className="h-8! w-full! min-w-0 flex-1 border-border bg-background px-2 hover:bg-accent md:w-64! md:flex-none"
+            >
+              <EventCalendarTitle
+                render={<span />}
+                className="m-0 w-full text-center"
+              />
+            </EventCalendarDatePicker>
+            <EventCalendarNavNext
+              tooltip={null}
+              className="size-8! shrink-0 border-border bg-background hover:bg-accent"
+            />
+          </div>
+        </EventCalendarNav>
       </div>
       <EventCalendarContent />
       {loadError && (

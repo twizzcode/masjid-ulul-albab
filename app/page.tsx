@@ -4,7 +4,6 @@ import {
   IconBrandWhatsapp,
   IconMail,
   IconMessageCircle,
-  IconWallet,
 } from "@tabler/icons-react"
 
 import { HeroSlideshow } from "@/components/hero-slideshow"
@@ -32,14 +31,14 @@ export default async function Page() {
   ]
 
   return (
-    <div className="container mx-auto w-full max-w-7xl px-3 pt-10 pb-24 sm:px-6 md:pt-12 lg:pt-14 xl:pt-24">
+    <div className="container mx-auto w-full max-w-7xl px-3 pt-7 pb-24 sm:px-6 md:pt-9 lg:pt-10 xl:pt-12">
       {/* Hero */}
       <section
         id="beranda"
         className="grid scroll-mt-32 gap-10 lg:grid-cols-5 lg:items-stretch lg:gap-8 xl:min-h-[65vh]"
       >
         <div className="flex flex-col gap-10 lg:col-span-3 lg:h-full xl:justify-between">
-          <div className="flex flex-col items-start gap-6">
+          <div className="flex flex-col items-center gap-6 text-center lg:items-start lg:text-left">
             <span className="rounded-full border px-3 py-1 text-xs font-medium text-muted-foreground">
               Assalamu&rsquo;alaikum warahmatullahi wabarakatuh!
             </span>
@@ -51,14 +50,7 @@ export default async function Page() {
               bertumbuh untuk memperdalam ilmu, iman, dan ukhuwah. Jelajahi
               berbagai layanan dan kajian inspiratif dalam satu platform.
             </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <Link
-                href="/keuangan"
-                className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-5 py-2 text-sm font-bold transition duration-200 hover:-translate-y-0.5 hover:bg-muted sm:w-auto"
-              >
-                <IconWallet aria-hidden className="size-4" />
-                Keuangan
-              </Link>
+            <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
               <Link
                 href="/peminjaman"
                 className="inline-flex w-full items-center justify-center gap-2 rounded-md bg-gradient-to-b from-blue-500 to-blue-700 px-5 py-2 text-sm font-bold text-white shadow-[0px_2px_0px_0px_rgba(255,255,255,0.3)_inset] transition duration-200 hover:-translate-y-0.5 sm:w-auto"
@@ -68,7 +60,7 @@ export default async function Page() {
               </Link>
             </div>
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col items-center gap-4 text-center lg:items-start lg:text-left">
             <p className="max-w-sm text-sm text-muted-foreground">
               Dikelola oleh{" "}
               <span className="font-medium text-foreground">
@@ -79,7 +71,7 @@ export default async function Page() {
                 Al-Husna Ilkom UNNES
               </span>
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
               <a
                 href="https://wa.me/6281234567890"
                 target="_blank"
