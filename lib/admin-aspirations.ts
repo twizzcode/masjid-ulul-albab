@@ -29,12 +29,8 @@ function escapeLike(value: string) {
 
 export async function listAdminAspirations({
   search = "",
-  page = 1,
-  pageSize = 10,
 }: {
   search?: string
-  page?: number
-  pageSize?: number
 } = {}): Promise<AdminAspirationPage> {
   const conditions: SQL[] = []
   if (search) {
@@ -55,9 +51,7 @@ export async function listAdminAspirations({
       .select()
       .from(aspiration)
       .where(where)
-      .orderBy(desc(aspiration.createdAt), desc(aspiration.id))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize),
+      .orderBy(desc(aspiration.createdAt), desc(aspiration.id)),
     db.select({ value: count() }).from(aspiration).where(where),
   ])
 
@@ -72,4 +66,9 @@ export async function listAdminAspirations({
     })),
     total: Number(result?.value ?? 0),
   }
+}
+
+export async function countAdminAspirations() {
+  const [result] = await db.select({ value: count() }).from(aspiration)
+  return Number(result?.value ?? 0)
 }

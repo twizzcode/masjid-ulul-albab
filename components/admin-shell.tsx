@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Fragment, useState } from "react"
 import type { ReactNode } from "react"
 import type { IconSvgElement } from "@hugeicons/react"
 import {
@@ -10,6 +10,7 @@ import {
   InformationCircleIcon,
   Logout01Icon,
   MoneyReceive01Icon,
+  MoreHorizontalCircle01Icon,
   TaskDone01Icon,
   UserCircleIcon,
   UserMultiple02Icon,
@@ -64,10 +65,16 @@ import {
   SidebarProvider,
   SidebarSeparator,
   SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 import { TooltipProvider } from "@/components/ui/tooltip"
 import { ScrollReveal } from "@/components/scroll-reveal"
+import {
+  useAdminNavCounts,
+  type AdminNavCounts,
+} from "@/components/admin-nav-counts-provider"
 import { authClient } from "@/lib/auth-client"
+import { cn } from "@/lib/utils"
 
 type NavItem = {
   label: string
@@ -122,6 +129,7 @@ function UserAvatar({
 
 function SidebarUserMenu() {
   const router = useRouter()
+  const { isMobile } = useSidebar()
   const { data: session, isPending } = authClient.useSession()
   const [showAccount, setShowAccount] = useState(false)
 
@@ -169,7 +177,11 @@ function SidebarUserMenu() {
             </span>
           </span>
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" align="end" className="w-64">
+        <DropdownMenuContent
+          side={isMobile ? "top" : "right"}
+          align="end"
+          className="w-64"
+        >
           <DropdownMenuGroup>
             <DropdownMenuLabel className="flex items-center gap-2 py-2">
               <UserAvatar user={user} size="sm" />
@@ -236,7 +248,7 @@ function SidebarUserMenu() {
   )
 }
 
-function AdminSidebar({ waitingBookings }: { waitingBookings: number }) {
+function AdminSidebar({ counts }: { counts: AdminNavCounts }) {
   const pathname = usePathname()
 
   return (
@@ -293,13 +305,23 @@ function AdminSidebar({ waitingBookings }: { waitingBookings: number }) {
                       <HugeiconsIcon icon={item.icon} strokeWidth={2} />
                       <span>{item.label}</span>
                     </SidebarMenuButton>
-                    {item.label === "Peminjaman" && waitingBookings > 0 && (
+                    {item.label === "Peminjaman" &&
+                      counts.waitingBookings > 0 && (
+                        <SidebarMenuBadge
+                          className="-translate-y-1/2 rounded-full border border-warning/15 bg-warning/10 text-warning-foreground peer-data-[size=default]/menu-button:top-1/2 dark:border-warning/25 dark:bg-warning/15 dark:text-warning"
+                          aria-label={`${counts.waitingBookings} peminjaman menunggu`}
+                          title={`${counts.waitingBookings} peminjaman menunggu`}
+                        >
+                          {counts.waitingBookings}
+                        </SidebarMenuBadge>
+                      )}
+                    {item.label === "Aspirasi" && counts.aspirations > 0 && (
                       <SidebarMenuBadge
                         className="-translate-y-1/2 rounded-full border border-warning/15 bg-warning/10 text-warning-foreground peer-data-[size=default]/menu-button:top-1/2 dark:border-warning/25 dark:bg-warning/15 dark:text-warning"
-                        aria-label={`${waitingBookings} peminjaman menunggu`}
-                        title={`${waitingBookings} peminjaman menunggu`}
+                        aria-label={`${counts.aspirations} aspirasi masuk`}
+                        title={`${counts.aspirations} aspirasi masuk`}
                       >
-                        {waitingBookings}
+                        {counts.aspirations}
                       </SidebarMenuBadge>
                     )}
                   </SidebarMenuItem>
@@ -368,17 +390,101 @@ function AdminBreadcrumb({
   )
 }
 
+function AdminBottomNav({ counts }: { counts: AdminNavCounts }) {
+  const pathname = usePathname()
+  const { toggleSidebar } = useSidebar()
+  const mobileItems = [NAV_ITEMS[0], NAV_ITEMS[1], NAV_ITEMS[2], NAV_ITEMS[3]]
+
+  return (
+    <nav
+      aria-label="Navigasi administrasi mobile"
+      className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 px-2 pt-1 pb-[calc(0.25rem+env(safe-area-inset-bottom))] backdrop-blur-sm md:hidden"
+    >
+      <div className="mx-auto grid max-w-lg grid-cols-5">
+        {mobileItems.map((item, index) => {
+          if (!item.href) return null
+          const isActive =
+            item.href === "/admin"
+              ? pathname === item.href
+              : pathname.startsWith(item.href)
+
+          const link = (
+            <Link
+              key={item.label}
+              href={item.href}
+              aria-current={isActive ? "page" : undefined}
+              className={cn(
+                "relative flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+                isActive &&
+                  "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300"
+              )}
+            >
+              <span className="relative">
+                <HugeiconsIcon
+                  icon={item.icon}
+                  strokeWidth={2}
+                  className="size-5"
+                />
+                {item.label === "Peminjaman" && counts.waitingBookings > 0 && (
+                  <span
+                    className="absolute -top-2 -right-3 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] leading-4 font-bold text-white"
+                    aria-label={`${counts.waitingBookings} peminjaman menunggu`}
+                  >
+                    {counts.waitingBookings > 99
+                      ? "99+"
+                      : counts.waitingBookings}
+                  </span>
+                )}
+                {item.label === "Aspirasi" && counts.aspirations > 0 && (
+                  <span
+                    className="absolute -top-2 -right-3 flex min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[9px] leading-4 font-bold text-white"
+                    aria-label={`${counts.aspirations} aspirasi masuk`}
+                  >
+                    {counts.aspirations > 99 ? "99+" : counts.aspirations}
+                  </span>
+                )}
+              </span>
+              <span className="max-w-full truncate">{item.label}</span>
+            </Link>
+          )
+
+          if (index !== 1) return link
+
+          return (
+            <Fragment key={item.label}>
+              {link}
+              <button
+                type="button"
+                onClick={toggleSidebar}
+                className="relative flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-2 text-[10px] font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+                aria-label="Buka menu lainnya"
+              >
+                <HugeiconsIcon
+                  icon={MoreHorizontalCircle01Icon}
+                  strokeWidth={2}
+                  className="size-5"
+                />
+                <span>More</span>
+              </button>
+            </Fragment>
+          )
+        })}
+      </div>
+    </nav>
+  )
+}
+
 export function AdminShell({
   page,
   parent,
   children,
-  waitingBookings = 0,
 }: {
   page: string
   parent?: { label: string; href: string }
   children: ReactNode
-  waitingBookings?: number
 }) {
+  const navCounts = useAdminNavCounts()
+
   return (
     <TooltipProvider>
       <style>{`
@@ -394,14 +500,15 @@ export function AdminShell({
         }
       `}</style>
       <SidebarProvider data-admin-shell className="min-h-svh w-full">
-        <AdminSidebar waitingBookings={waitingBookings} />
-        <SidebarInset>
-          <header className="flex h-14 shrink-0 items-center gap-3 border-b px-3 sm:px-5">
+        <AdminSidebar counts={navCounts} />
+        <SidebarInset className="pb-20 md:pb-0">
+          <header className="sticky top-0 z-30 flex h-14 shrink-0 items-center gap-3 border-b bg-background/95 px-3 backdrop-blur-sm sm:px-5">
             <SidebarTrigger aria-label="Buka atau tutup sidebar" />
             <Separator orientation="vertical" className="h-4" />
             <AdminBreadcrumb page={page} parent={parent} />
           </header>
           <ScrollReveal>{children}</ScrollReveal>
+          <AdminBottomNav counts={navCounts} />
         </SidebarInset>
       </SidebarProvider>
     </TooltipProvider>

@@ -14,13 +14,10 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import {
-  type ColumnDef,
-  type PaginationState,
-  useTable,
-} from "@tanstack/react-table"
+import { type ColumnDef, useTable } from "@tanstack/react-table"
 
 import { AdminShell } from "@/components/admin-shell"
+import { useAdminNavCounts } from "@/components/admin-nav-counts-provider"
 import { Badge } from "@/components/reui/badge"
 import {
   DataGrid,
@@ -29,11 +26,10 @@ import {
   type DataGridFeatures,
 } from "@/components/reui/data-grid/data-grid"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
-import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination"
 import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll-area"
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   Dialog,
   DialogClose,
@@ -229,11 +225,11 @@ export function AdminBookings({
 }) {
   const isMobile = useIsMobile()
   const router = useRouter()
+  const { refresh: refreshNavCounts, setCounts } = useAdminNavCounts()
   const [bookings, setBookings] = useState(initialPage.bookings)
   const [total, setTotal] = useState(initialPage.total)
   const [activeCount, setActiveCount] = useState(initialPage.activeCount)
   const [archiveCount, setArchiveCount] = useState(initialPage.archiveCount)
-  const [pendingCount, setPendingCount] = useState(initialPage.pendingCount)
   const [archiveMonths, setArchiveMonths] = useState(initialPage.archiveMonths)
   const [isLoading, setIsLoading] = useState(false)
   const requestRef = useRef<AbortController | null>(null)
@@ -243,17 +239,10 @@ export function AdminBookings({
   const [month, setMonth] = useState("")
   const [search, setSearch] = useState("")
   const [action, setAction] = useState<BookingAction>(null)
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  })
   const effectiveMonth = archiveMonths.includes(month)
     ? month
     : (archiveMonths[0] ?? "")
   const monthIndex = archiveMonths.indexOf(effectiveMonth)
-
-  const rowsPerPage = 10
-  const pageIndex = pagination.pageIndex
 
   useEffect(() => {
     if (isInitialRender.current) {
@@ -269,10 +258,7 @@ export function AdminBookings({
         setIsLoading(true)
         setMutationError("")
         try {
-          const params = new URLSearchParams({
-            view,
-            page: String(pageIndex + 1),
-          })
+          const params = new URLSearchParams({ view })
           if (view === "archive" && effectiveMonth) {
             params.set("month", effectiveMonth)
           }
@@ -291,7 +277,7 @@ export function AdminBookings({
           setTotal(result.total)
           setActiveCount(result.activeCount)
           setArchiveCount(result.archiveCount)
-          setPendingCount(result.pendingCount)
+          setCounts({ waitingBookings: result.pendingCount })
           setArchiveMonths(result.archiveMonths)
         } catch (error) {
           if (error instanceof DOMException && error.name === "AbortError")
@@ -310,7 +296,7 @@ export function AdminBookings({
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [effectiveMonth, pageIndex, search, view])
+  }, [effectiveMonth, search, setCounts, view])
 
   const handleAction = useCallback(
     (nextAction: Exclude<BookingAction, null>) => setAction(nextAction),
@@ -445,20 +431,10 @@ export function AdminBookings({
     features: dataGridFeatures,
     columns,
     data: bookings,
-    pageCount: Math.ceil(total / rowsPerPage),
     getRowId: (row: Booking) => row.id,
     state: {
-      pagination: { pageIndex, pageSize: rowsPerPage },
+      pagination: { pageIndex: 0, pageSize: Math.max(bookings.length, 1) },
     },
-    onPaginationChange: (updater) =>
-      setPagination((current) => {
-        const currentPagination = { ...current, pageSize: rowsPerPage }
-        const next =
-          typeof updater === "function" ? updater(currentPagination) : updater
-
-        return { pageIndex: next.pageIndex, pageSize: rowsPerPage }
-      }),
-    manualPagination: true,
     manualSorting: true,
     enableSorting: false,
     autoResetPageIndex: false,
@@ -492,14 +468,13 @@ export function AdminBookings({
         item.id === action.booking.id ? { ...item, status } : item
       )
     )
-    if (action.booking.status === "Menunggu")
-      setPendingCount((count) => Math.max(0, count - 1))
+    refreshNavCounts()
     setAction(null)
     router.refresh()
   }
 
   return (
-    <AdminShell page="Peminjaman" waitingBookings={pendingCount}>
+    <AdminShell page="Peminjaman">
       <div className="flex min-w-0 flex-1 flex-col gap-6 p-3 sm:p-5 lg:p-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -557,13 +532,7 @@ export function AdminBookings({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Tabs
                   value={view}
-                  onValueChange={(value) => {
-                    setView(value as BookingView)
-                    setPagination((current) => ({
-                      ...current,
-                      pageIndex: 0,
-                    }))
-                  }}
+                  onValueChange={(value) => setView(value as BookingView)}
                   className="w-full sm:w-auto"
                 >
                   <TabsList className="w-full sm:w-fit">
@@ -591,13 +560,7 @@ export function AdminBookings({
                         aria-label="Bulan sebelumnya"
                         title="Bulan sebelumnya"
                         disabled={monthIndex >= archiveMonths.length - 1}
-                        onClick={() => {
-                          setMonth(archiveMonths[monthIndex + 1])
-                          setPagination((current) => ({
-                            ...current,
-                            pageIndex: 0,
-                          }))
-                        }}
+                        onClick={() => setMonth(archiveMonths[monthIndex + 1])}
                       >
                         <HugeiconsIcon icon={ArrowLeft01Icon} strokeWidth={2} />
                       </Button>
@@ -612,13 +575,7 @@ export function AdminBookings({
                         aria-label="Bulan berikutnya"
                         title="Bulan berikutnya"
                         disabled={monthIndex <= 0}
-                        onClick={() => {
-                          setMonth(archiveMonths[monthIndex - 1])
-                          setPagination((current) => ({
-                            ...current,
-                            pageIndex: 0,
-                          }))
-                        }}
+                        onClick={() => setMonth(archiveMonths[monthIndex - 1])}
                       >
                         <HugeiconsIcon
                           icon={ArrowRight01Icon}
@@ -637,13 +594,7 @@ export function AdminBookings({
                       placeholder="Cari ID peminjaman..."
                       maxLength={50}
                       value={search}
-                      onChange={(event) => {
-                        setSearch(event.target.value)
-                        setPagination((current) => ({
-                          ...current,
-                          pageIndex: 0,
-                        }))
-                      }}
+                      onChange={(event) => setSearch(event.target.value)}
                     />
                     {search && (
                       <InputGroupAddon align="inline-end">
@@ -651,13 +602,7 @@ export function AdminBookings({
                           aria-label="Hapus pencarian"
                           title="Hapus pencarian"
                           size="icon-xs"
-                          onClick={() => {
-                            setSearch("")
-                            setPagination((current) => ({
-                              ...current,
-                              pageIndex: 0,
-                            }))
-                          }}
+                          onClick={() => setSearch("")}
                         >
                           <HugeiconsIcon
                             icon={MultiplicationSignIcon}
@@ -679,14 +624,6 @@ export function AdminBookings({
                 </DataGridScrollArea>
               </DataGridContainer>
             </CardContent>
-            {total > 0 && (
-              <CardFooter className="border-t bg-transparent px-3 py-2 sm:px-4">
-                <DataGridPagination
-                  sizes={[10]}
-                  className="[&>div:first-child]:hidden"
-                />
-              </CardFooter>
-            )}
           </Card>
         </DataGrid>
       </div>

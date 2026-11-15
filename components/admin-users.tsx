@@ -10,7 +10,6 @@ import {
 import { HugeiconsIcon } from "@hugeicons/react"
 import {
   type ColumnDef,
-  type PaginationState,
   type SortingState,
   useTable,
 } from "@tanstack/react-table"
@@ -25,7 +24,6 @@ import {
   type DataGridFeatures,
 } from "@/components/reui/data-grid/data-grid"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
-import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination"
 import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll-area"
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -34,7 +32,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
@@ -143,16 +140,9 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
   const [errorMessage, setErrorMessage] = useState("")
   const [actionError, setActionError] = useState("")
   const [promotingId, setPromotingId] = useState<string | null>(null)
-  const [adminPagination, setAdminPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  })
   const [adminSorting, setAdminSorting] = useState<SortingState>([
     { id: "name", desc: false },
   ])
-
-  const adminRowsPerPage = isMobile ? Math.max(admins.length, 1) : 10
-  const adminPageIndex = isMobile ? 0 : adminPagination.pageIndex
 
   function handleDialogChange(open: boolean) {
     setDialogOpen(open)
@@ -374,23 +364,14 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
     features: dataGridFeatures,
     columns: adminColumns,
     data: admins,
-    pageCount: Math.ceil(admins.length / adminRowsPerPage),
     getRowId: (row: AdminUser) => row.id,
     state: {
       pagination: {
-        pageIndex: adminPageIndex,
-        pageSize: adminRowsPerPage,
+        pageIndex: 0,
+        pageSize: Math.max(admins.length, 1),
       },
       sorting: adminSorting,
     },
-    onPaginationChange: (updater) =>
-      setAdminPagination((current) => {
-        const next =
-          typeof updater === "function"
-            ? updater({ ...current, pageSize: adminRowsPerPage })
-            : updater
-        return { pageIndex: next.pageIndex, pageSize: adminRowsPerPage }
-      }),
     onSortingChange: setAdminSorting,
     autoResetPageIndex: true,
   })
@@ -478,14 +459,6 @@ export function AdminUsers({ admins }: { admins: AdminUser[] }) {
                 </DataGridScrollArea>
               </DataGridContainer>
             </CardContent>
-            {!isMobile && admins.length > 0 && (
-              <CardFooter className="border-t bg-transparent px-3 py-2 sm:px-4">
-                <DataGridPagination
-                  sizes={[10]}
-                  className="[&>div:first-child]:hidden"
-                />
-              </CardFooter>
-            )}
           </Card>
         </DataGrid>
       </div>

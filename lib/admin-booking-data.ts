@@ -126,14 +126,10 @@ export async function listAdminBookings({
   view = "active",
   month,
   search = "",
-  page = 1,
-  pageSize = 10,
 }: {
   view?: AdminBookingView
   month?: string
   search?: string
-  page?: number
-  pageSize?: number
 } = {}): Promise<AdminBookingPage> {
   const now = new Date()
   const conditions: SQL[] = [
@@ -156,15 +152,19 @@ export async function listAdminBookings({
       .select()
       .from(booking)
       .where(where)
-      .orderBy(desc(booking.createdAt), desc(booking.id))
-      .limit(pageSize)
-      .offset((page - 1) * pageSize),
+      .orderBy(
+        ...(view === "active"
+          ? [sql`case when ${booking.status} = 'PENDING' then 0 else 1 end`]
+          : []),
+        desc(booking.createdAt),
+        desc(booking.id)
+      ),
     db.select({ value: count() }).from(booking).where(where),
     db
       .select({
         active: sql<number>`count(*) filter (where ${booking.endAt} >= ${now})::int`,
         archive: sql<number>`count(*) filter (where ${booking.endAt} < ${now})::int`,
-        pending: sql<number>`count(*) filter (where ${booking.status} = 'PENDING')::int`,
+        pending: sql<number>`count(*) filter (where ${booking.status} = 'PENDING' and ${booking.endAt} >= ${now})::int`,
       })
       .from(booking),
     db
@@ -195,9 +195,10 @@ export const getAdminBooking = cache(async (id: string) => {
 })
 
 export async function countPendingBookings() {
+  const now = new Date()
   const [result] = await db
     .select({ value: count() })
     .from(booking)
-    .where(eq(booking.status, "PENDING"))
+    .where(and(eq(booking.status, "PENDING"), gte(booking.endAt, now)))
   return Number(result?.value ?? 0)
 }

@@ -79,7 +79,7 @@ export async function getAdminDashboard(): Promise<DashboardData> {
     db
       .select({ value: count() })
       .from(booking)
-      .where(eq(booking.status, "PENDING")),
+      .where(and(eq(booking.status, "PENDING"), gte(booking.endAt, now))),
     db
       .select({
         total: count(),

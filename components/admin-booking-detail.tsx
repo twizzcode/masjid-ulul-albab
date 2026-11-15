@@ -18,6 +18,7 @@ import { useState, useTransition, type ReactNode } from "react"
 import { useRouter } from "next/navigation"
 
 import { AdminShell } from "@/components/admin-shell"
+import { useAdminNavCounts } from "@/components/admin-nav-counts-provider"
 import { Badge } from "@/components/reui/badge"
 import { FileType } from "@/components/reui/file-type"
 import { Button } from "@/components/ui/button"
@@ -67,14 +68,9 @@ function DetailItem({
   )
 }
 
-export function AdminBookingDetail({
-  booking,
-  pendingCount,
-}: {
-  booking: Booking
-  pendingCount: number
-}) {
+export function AdminBookingDetail({ booking }: { booking: Booking }) {
   const router = useRouter()
+  const { refresh: refreshNavCounts } = useAdminNavCounts()
   const whatsappUrl = booking.whatsapp
     ? `https://wa.me/${booking.whatsapp.replace(/\D/g, "")}`
     : null
@@ -131,6 +127,7 @@ export function AdminBookingDetail({
     }
 
     if (action === "delete") {
+      refreshNavCounts()
       router.replace("/admin/peminjaman")
       router.refresh()
       return
@@ -138,6 +135,7 @@ export function AdminBookingDetail({
 
     setStatus(action === "approve" ? "Disetujui" : "Ditolak")
     setAction(null)
+    refreshNavCounts()
     startTransition(() => router.refresh())
   }
 
@@ -145,11 +143,6 @@ export function AdminBookingDetail({
     <AdminShell
       page={booking.id}
       parent={{ label: "Peminjaman", href: "/admin/peminjaman" }}
-      waitingBookings={
-        pendingCount +
-        (booking.status === "Menunggu" ? -1 : 0) +
-        (status === "Menunggu" ? 1 : 0)
-      }
     >
       <div className="flex min-w-0 flex-1 flex-col gap-6 p-3 sm:p-5 lg:p-6">
         <div>

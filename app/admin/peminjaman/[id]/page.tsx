@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 
 import { AdminBookingDetail } from "@/components/admin-booking-detail"
-import { countPendingBookings, getAdminBooking } from "@/lib/admin-booking-data"
+import { getAdminBooking } from "@/lib/admin-booking-data"
 
 type Props = {
   params: Promise<{ id: string }>
@@ -20,12 +20,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function AdminPeminjamanDetailPage({ params }: Props) {
-  const [booking, pendingCount] = await Promise.all([
-    getAdminBooking((await params).id),
-    countPendingBookings(),
-  ])
+  const booking = await getAdminBooking((await params).id)
 
   if (!booking) notFound()
 
-  return <AdminBookingDetail booking={booking} pendingCount={pendingCount} />
+  return <AdminBookingDetail booking={booking} />
 }

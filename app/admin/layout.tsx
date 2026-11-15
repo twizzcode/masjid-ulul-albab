@@ -2,6 +2,9 @@ import { headers } from "next/headers"
 import { redirect } from "next/navigation"
 import type { Metadata } from "next"
 
+import { AdminNavCountsProvider } from "@/components/admin-nav-counts-provider"
+import { countAdminAspirations } from "@/lib/admin-aspirations"
+import { countPendingBookings } from "@/lib/admin-booking-data"
 import { auth } from "@/lib/auth"
 
 export const metadata: Metadata = {
@@ -21,5 +24,14 @@ export default async function AdminLayout({
   if (!session) redirect("/login?callbackURL=/admin")
   if (session.user.role !== "ADMIN") redirect("/")
 
-  return children
+  const [waitingBookings, aspirations] = await Promise.all([
+    countPendingBookings(),
+    countAdminAspirations(),
+  ])
+
+  return (
+    <AdminNavCountsProvider initialCounts={{ waitingBookings, aspirations }}>
+      {children}
+    </AdminNavCountsProvider>
+  )
 }

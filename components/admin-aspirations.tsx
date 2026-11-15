@@ -7,13 +7,10 @@ import {
   ViewIcon,
 } from "@hugeicons/core-free-icons"
 import { HugeiconsIcon } from "@hugeicons/react"
-import {
-  type ColumnDef,
-  type PaginationState,
-  useTable,
-} from "@tanstack/react-table"
+import { type ColumnDef, useTable } from "@tanstack/react-table"
 
 import { AdminShell } from "@/components/admin-shell"
+import { useAdminNavCounts } from "@/components/admin-nav-counts-provider"
 import { Badge } from "@/components/reui/badge"
 import {
   DataGrid,
@@ -22,11 +19,10 @@ import {
   type DataGridFeatures,
 } from "@/components/reui/data-grid/data-grid"
 import { DataGridColumnHeader } from "@/components/reui/data-grid/data-grid-column-header"
-import { DataGridPagination } from "@/components/reui/data-grid/data-grid-pagination"
 import { DataGridScrollArea } from "@/components/reui/data-grid/data-grid-scroll-area"
 import { DataGridTable } from "@/components/reui/data-grid/data-grid-table"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
+import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import {
   Dialog,
   DialogClose,
@@ -74,6 +70,7 @@ export function AdminAspirations({
   initialPage: AdminAspirationPage
 }) {
   const isMobile = useIsMobile()
+  const { setCounts } = useAdminNavCounts()
   const [aspirations, setAspirations] = useState(initialPage.aspirations)
   const [total, setTotal] = useState(initialPage.total)
   const [isLoading, setIsLoading] = useState(false)
@@ -81,13 +78,6 @@ export function AdminAspirations({
   const initialRender = useRef(true)
   const [search, setSearch] = useState("")
   const [selected, setSelected] = useState<AdminAspiration | null>(null)
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  })
-  const rowsPerPage = 10
-  const pageIndex = pagination.pageIndex
-
   useEffect(() => {
     if (initialRender.current) {
       initialRender.current = false
@@ -99,7 +89,7 @@ export function AdminAspirations({
         setIsLoading(true)
         setLoadError("")
         try {
-          const params = new URLSearchParams({ page: String(pageIndex + 1) })
+          const params = new URLSearchParams()
           if (search.trim()) params.set("search", search.trim())
           const response = await fetch(`/api/admin/aspirations?${params}`, {
             signal: controller.signal,
@@ -112,6 +102,7 @@ export function AdminAspirations({
           }
           setAspirations(result.aspirations)
           setTotal(result.total)
+          if (!search.trim()) setCounts({ aspirations: result.total })
         } catch (error) {
           if (error instanceof DOMException && error.name === "AbortError")
             return
@@ -128,7 +119,7 @@ export function AdminAspirations({
       window.clearTimeout(timer)
       controller.abort()
     }
-  }, [pageIndex, search])
+  }, [search, setCounts])
 
   const columns = useMemo<
     ColumnDef<DataGridFeatures, AdminAspiration>[]
@@ -232,20 +223,10 @@ export function AdminAspirations({
     features: dataGridFeatures,
     columns,
     data: aspirations,
-    pageCount: Math.ceil(total / rowsPerPage),
     getRowId: (row: AdminAspiration) => row.id,
     state: {
-      pagination: { pageIndex, pageSize: rowsPerPage },
+      pagination: { pageIndex: 0, pageSize: Math.max(aspirations.length, 1) },
     },
-    onPaginationChange: (updater) =>
-      setPagination((current) => {
-        const next =
-          typeof updater === "function"
-            ? updater({ ...current, pageSize: rowsPerPage })
-            : updater
-        return { pageIndex: next.pageIndex, pageSize: rowsPerPage }
-      }),
-    manualPagination: true,
     manualSorting: true,
     enableSorting: false,
     autoResetPageIndex: false,
@@ -309,13 +290,7 @@ export function AdminAspirations({
                     placeholder="Cari nama atau isi..."
                     maxLength={100}
                     value={search}
-                    onChange={(event) => {
-                      setSearch(event.target.value)
-                      setPagination((current) => ({
-                        ...current,
-                        pageIndex: 0,
-                      }))
-                    }}
+                    onChange={(event) => setSearch(event.target.value)}
                   />
                   {search && (
                     <InputGroupAddon align="inline-end">
@@ -323,13 +298,7 @@ export function AdminAspirations({
                         aria-label="Hapus pencarian"
                         title="Hapus pencarian"
                         size="icon-xs"
-                        onClick={() => {
-                          setSearch("")
-                          setPagination((current) => ({
-                            ...current,
-                            pageIndex: 0,
-                          }))
-                        }}
+                        onClick={() => setSearch("")}
                       >
                         <HugeiconsIcon
                           icon={MultiplicationSignIcon}
@@ -358,14 +327,6 @@ export function AdminAspirations({
                 </DataGridScrollArea>
               </DataGridContainer>
             </CardContent>
-            {total > 0 && (
-              <CardFooter className="border-t bg-transparent px-3 py-2 sm:px-4">
-                <DataGridPagination
-                  sizes={[10]}
-                  className="[&>div:first-child]:hidden"
-                />
-              </CardFooter>
-            )}
           </Card>
         </DataGrid>
       </div>
