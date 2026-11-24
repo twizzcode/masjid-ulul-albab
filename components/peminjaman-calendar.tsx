@@ -222,6 +222,22 @@ export type PublicBooking = {
   status: Exclude<DbBookingStatus, "REJECTED">
 }
 
+export function splitBookingOccurrences(
+  { start, end }: Pick<CalendarEvent, "start" | "end">,
+  _range: EventCalendarRangeInfo["range"],
+  { timeZone }: { timeZone: string }
+) {
+  const segments = []
+  let cursor = start
+  while (cursor < end) {
+    const midnight = addDays(startOfDay(new TZDate(cursor, timeZone)), 1)
+    const segmentEnd = midnight < end ? midnight : end
+    segments.push({ start: cursor, end: segmentEnd })
+    cursor = segmentEnd
+  }
+  return segments
+}
+
 export function PeminjamanCalendar() {
   const isMobile = useIsMobile()
   const [tab, setTab] = useState<CalendarTab>("week")
@@ -335,6 +351,9 @@ export function PeminjamanCalendar() {
   return (
     <EventCalendar
       events={events}
+      getOccurrences={
+        view === "week" || view === "days" ? splitBookingOccurrences : undefined
+      }
       onEventClick={(occurrence, event) => {
         event.preventDefault()
         setSelected(occurrence)
@@ -477,7 +496,7 @@ export function PeminjamanCalendar() {
                       icon={IconCalendarTime}
                       label="Waktu mulai"
                       value={format(
-                        selected.start,
+                        new TZDate(selected.event.start, "Asia/Jakarta"),
                         "EEEE, d MMMM yyyy · HH:mm",
                         {
                           locale: localeId,
@@ -487,9 +506,11 @@ export function PeminjamanCalendar() {
                     <DetailRow
                       icon={IconCalendarTime}
                       label="Waktu selesai"
-                      value={format(selected.end, "EEEE, d MMMM yyyy · HH:mm", {
-                        locale: localeId,
-                      })}
+                      value={format(
+                        new TZDate(selected.event.end, "Asia/Jakarta"),
+                        "EEEE, d MMMM yyyy · HH:mm",
+                        { locale: localeId }
+                      )}
                     />
                   </CardContent>
                 </Card>
