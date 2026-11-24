@@ -373,6 +373,26 @@ export function PeminjamanCalendar() {
       interactions={{ drag: false, resize: false, selectSlot: false }}
       todayClassName="bg-primary/5"
       eventTooltip={!isMobile}
+      renderEvent={({ occurrence }) => (
+        <span className="block w-full min-w-0">
+          <span className="block truncate font-medium">
+            {occurrence.event.title}
+          </span>
+          {occurrence.event.data?.organizer && (
+            <span className="block truncate opacity-80">
+              {occurrence.event.data.organizer}
+            </span>
+          )}
+          <span className="block truncate tabular-nums opacity-80">
+            {format(new TZDate(occurrence.start, "Asia/Jakarta"), "HH:mm")}
+            {"–"}
+            {format(
+              new TZDate(occurrence.end, "Asia/Jakarta"),
+              "HH:mm"
+            ).replace(/^00:00$/, "24:00")}
+          </span>
+        </span>
+      )}
       scrollMode="page"
       enableShortcuts={false}
       components={CALENDAR_VIEWS}

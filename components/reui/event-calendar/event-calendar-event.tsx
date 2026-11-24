@@ -38,8 +38,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { HugeiconsIcon } from "@hugeicons/react"
-import { RepeatIcon } from "@hugeicons/core-free-icons"
 
 /** Event color presets; each stays legible on light and dark surfaces. */
 const EVENT_CALENDAR_COLORS: Array<{ name: string; value: string }> = [
@@ -215,9 +213,6 @@ function EventCalendarEvent<TData = unknown>({
           className="-me-0.5 size-1.5 shrink-0 rounded-full bg-(--ec-event-color)"
         />
       )}
-      {occurrence.isRecurring && (
-        <HugeiconsIcon icon={RepeatIcon} strokeWidth={2} className="size-2.5 shrink-0 opacity-70" aria-hidden="true" />
-      )}
       <span
         className={cn(
           "font-medium",
@@ -305,9 +300,6 @@ function EventCalendarEvent<TData = unknown>({
         className="size-2 shrink-0 rounded-full bg-(--ec-event-color)"
       />
       <span className="truncate text-sm">{event.title}</span>
-      {occurrence.isRecurring && (
-        <HugeiconsIcon icon={RepeatIcon} strokeWidth={2} className="text-muted-foreground size-2.5 shrink-0" aria-hidden="true" />
-      )}
     </>
   )
 
