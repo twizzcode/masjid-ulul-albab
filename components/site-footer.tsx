@@ -15,7 +15,6 @@ import { usePathname } from "next/navigation"
 const navigation = [
   { label: "Beranda", href: "/" },
   { label: "Peminjaman", href: "/peminjaman" },
-  { label: "Keuangan", href: "/keuangan" },
   { label: "Tentang Kami", href: "/tentang-kami" },
 ]
 

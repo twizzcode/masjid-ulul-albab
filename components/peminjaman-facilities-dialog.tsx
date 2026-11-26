@@ -53,7 +53,6 @@ const ROOM_FACILITIES = [
       { label: "Papan tulis", icon: IconChalkboard },
       { label: "Hijab (pembatas)", icon: IconLayoutBoard },
       { label: "Kipas angin", icon: IconWind },
-      { label: "AC", icon: IconAirConditioning },
     ],
   },
 ] as const

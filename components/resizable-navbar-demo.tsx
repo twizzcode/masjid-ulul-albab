@@ -42,10 +42,6 @@ const navItems = [
     link: "/peminjaman",
   },
   {
-    name: "Keuangan",
-    link: "/keuangan",
-  },
-  {
     name: "Tentang Kami",
     link: "/tentang-kami",
   },
